@@ -1,0 +1,8 @@
+prefix=/media/angelo/WorkData/git/devel
+
+Name: rvmaster
+Description: Description of rvmaster
+Version: 0.0.0
+Cflags: 
+Libs: -L/media/angelo/WorkData/git/devel/lib 
+Requires: 
