@@ -1,0 +1,12 @@
+atom0:<<g1>> F d
+atom9:<<g1>> F s2 and atom8
+atom6:<<g1>> F d
+atom5:<<g1>> F s2 and atom4
+atom8:<<g1>> F d
+atom7:<<g1>> F s2 and atom6
+atom2:<<g1>> F d
+atom10:<<g1>> F d
+atom1:<<g1>> F s2 and atom0
+atom11:<<g1>> F s2 and atom10
+atom4:<<g1>> F d
+atom3:<<g1>> F s2 and atom2

@@ -1,0 +1,452 @@
+atom141:<<g1>> F o
+atom262:<<g1>> F o
+atom383:<<g1>> F o
+atom140:<<g1>> F o
+atom261:<<g1>> F o
+atom382:<<g1>> F o
+atom143:<<g1>> F o
+atom264:<<g1>> F o
+atom385:<<g1>> F o
+atom142:<<g1>> F o
+atom263:<<g1>> F o
+atom384:<<g1>> F s2 and atom383
+atom260:<<g1>> F s2 and atom259
+atom381:<<g1>> F s2 and atom380
+atom380:<<g1>> F o
+atom87:<<g1>> F s2 and atom86
+atom88:<<g1>> F o
+atom89:<<g1>> F s2 and atom88
+atom83:<<g1>> F o
+atom84:<<g1>> F s2 and atom83
+atom85:<<g1>> F o
+atom86:<<g1>> F o
+atom80:<<g1>> F o
+atom81:<<g1>> F o
+atom82:<<g1>> F s2 and atom81
+atom138:<<g1>> F o
+atom259:<<g1>> F o
+atom137:<<g1>> F s2 and atom136
+atom258:<<g1>> F s2 and atom257
+atom379:<<g1>> F s2 and atom378
+atom139:<<g1>> F o
+atom134:<<g1>> F o
+atom255:<<g1>> F o
+atom376:<<g1>> F o
+atom133:<<g1>> F s2 and atom132
+atom254:<<g1>> F s2 and atom253
+atom375:<<g1>> F o
+atom136:<<g1>> F o
+atom257:<<g1>> F o
+atom378:<<g1>> F o
+atom135:<<g1>> F s2 and atom134
+atom256:<<g1>> F s2 and atom255
+atom377:<<g1>> F s2 and atom376
+atom130:<<g1>> F o
+atom251:<<g1>> F s2 and atom250
+atom372:<<g1>> F o
+atom250:<<g1>> F o
+atom371:<<g1>> F s2 and atom370
+atom132:<<g1>> F o
+atom253:<<g1>> F o
+atom374:<<g1>> F o
+atom131:<<g1>> F s2 and atom130
+atom252:<<g1>> F o
+atom373:<<g1>> F s2 and atom372
+atom370:<<g1>> F o
+atom98:<<g1>> F o
+atom99:<<g1>> F o
+atom94:<<g1>> F o
+atom95:<<g1>> F s2 and atom94
+atom96:<<g1>> F o
+atom97:<<g1>> F s2 and atom96
+atom90:<<g1>> F o
+atom91:<<g1>> F o
+atom92:<<g1>> F s2 and atom91
+atom93:<<g1>> F o
+atom127:<<g1>> F s2 and atom126
+atom248:<<g1>> F s2 and atom247
+atom369:<<g1>> F s2 and atom368
+atom126:<<g1>> F o
+atom247:<<g1>> F o
+atom368:<<g1>> F o
+atom129:<<g1>> F s2 and atom128
+atom128:<<g1>> F o
+atom249:<<g1>> F o
+atom123:<<g1>> F s2 and atom122
+atom244:<<g1>> F o
+atom365:<<g1>> F s2 and atom364
+atom122:<<g1>> F o
+atom243:<<g1>> F o
+atom364:<<g1>> F o
+atom125:<<g1>> F s2 and atom124
+atom246:<<g1>> F o
+atom367:<<g1>> F s2 and atom366
+atom124:<<g1>> F o
+atom245:<<g1>> F s2 and atom244
+atom366:<<g1>> F o
+atom240:<<g1>> F s2 and atom239
+atom361:<<g1>> F s2 and atom360
+atom360:<<g1>> F o
+atom121:<<g1>> F s2 and atom120
+atom242:<<g1>> F s2 and atom241
+atom363:<<g1>> F s2 and atom362
+atom120:<<g1>> F o
+atom241:<<g1>> F o
+atom362:<<g1>> F o
+atom119:<<g1>> F o
+atom116:<<g1>> F o
+atom237:<<g1>> F o
+atom358:<<g1>> F o
+atom115:<<g1>> F o
+atom236:<<g1>> F s2 and atom235
+atom357:<<g1>> F s2 and atom356
+atom118:<<g1>> F o
+atom239:<<g1>> F o
+atom117:<<g1>> F s2 and atom116
+atom238:<<g1>> F s2 and atom237
+atom359:<<g1>> F s2 and atom358
+atom112:<<g1>> F o
+atom233:<<g1>> F o
+atom354:<<g1>> F s2 and atom353
+atom111:<<g1>> F o
+atom232:<<g1>> F s2 and atom231
+atom353:<<g1>> F o
+atom114:<<g1>> F o
+atom235:<<g1>> F o
+atom356:<<g1>> F o
+atom113:<<g1>> F o
+atom234:<<g1>> F s2 and atom233
+atom355:<<g1>> F o
+atom350:<<g1>> F o
+atom110:<<g1>> F o
+atom231:<<g1>> F o
+atom352:<<g1>> F s2 and atom351
+atom230:<<g1>> F o
+atom351:<<g1>> F o
+atom109:<<g1>> F o
+atom108:<<g1>> F o
+atom229:<<g1>> F o
+atom105:<<g1>> F o
+atom226:<<g1>> F s2 and atom225
+atom347:<<g1>> F o
+atom104:<<g1>> F o
+atom225:<<g1>> F o
+atom346:<<g1>> F s2 and atom345
+atom107:<<g1>> F o
+atom228:<<g1>> F o
+atom349:<<g1>> F o
+atom106:<<g1>> F o
+atom227:<<g1>> F o
+atom348:<<g1>> F s2 and atom347
+atom101:<<g1>> F o
+atom222:<<g1>> F s2 and atom221
+atom343:<<g1>> F o
+atom100:<<g1>> F o
+atom221:<<g1>> F o
+atom342:<<g1>> F o
+atom103:<<g1>> F o
+atom224:<<g1>> F s2 and atom223
+atom345:<<g1>> F o
+atom102:<<g1>> F o
+atom223:<<g1>> F o
+atom344:<<g1>> F o
+atom185:<<g1>> F o
+atom184:<<g1>> F s2 and atom183
+atom187:<<g1>> F o
+atom186:<<g1>> F s2 and atom185
+atom181:<<g1>> F o
+atom9:<<g1>> F o
+atom180:<<g1>> F o
+atom183:<<g1>> F o
+atom182:<<g1>> F s2 and atom181
+atom6:<<g1>> F o
+atom5:<<g1>> F o
+atom8:<<g1>> F o
+atom7:<<g1>> F o
+atom2:<<g1>> F o
+atom1:<<g1>> F o
+atom4:<<g1>> F o
+atom3:<<g1>> F o
+atom178:<<g1>> F s2 and atom177
+atom299:<<g1>> F o
+atom177:<<g1>> F o
+atom298:<<g1>> F s2 and atom297
+atom179:<<g1>> F o
+atom174:<<g1>> F s2 and atom173
+atom295:<<g1>> F s2 and atom294
+atom173:<<g1>> F o
+atom294:<<g1>> F o
+atom176:<<g1>> F o
+atom297:<<g1>> F o
+atom175:<<g1>> F o
+atom296:<<g1>> F o
+atom170:<<g1>> F o
+atom291:<<g1>> F s2 and atom290
+atom290:<<g1>> F o
+atom172:<<g1>> F o
+atom293:<<g1>> F s2 and atom292
+atom171:<<g1>> F s2 and atom170
+atom292:<<g1>> F o
+atom167:<<g1>> F o
+atom288:<<g1>> F o
+atom166:<<g1>> F s2 and atom165
+atom287:<<g1>> F s2 and atom286
+atom169:<<g1>> F o
+atom168:<<g1>> F s2 and atom167
+atom289:<<g1>> F s2 and atom288
+atom163:<<g1>> F o
+atom284:<<g1>> F o
+atom162:<<g1>> F o
+atom283:<<g1>> F s2 and atom282
+atom165:<<g1>> F o
+atom286:<<g1>> F o
+atom164:<<g1>> F s2 and atom163
+atom285:<<g1>> F s2 and atom284
+atom280:<<g1>> F o
+atom161:<<g1>> F s2 and atom160
+atom282:<<g1>> F o
+atom160:<<g1>> F o
+atom281:<<g1>> F s2 and atom280
+atom159:<<g1>> F s2 and atom158
+atom156:<<g1>> F s2 and atom155
+atom277:<<g1>> F s2 and atom276
+atom398:<<g1>> F s2 and atom397
+atom155:<<g1>> F o
+atom276:<<g1>> F o
+atom397:<<g1>> F o
+atom158:<<g1>> F o
+atom279:<<g1>> F s2 and atom278
+atom157:<<g1>> F o
+atom278:<<g1>> F o
+atom399:<<g1>> F o
+atom152:<<g1>> F o
+atom273:<<g1>> F o
+atom394:<<g1>> F s2 and atom393
+atom151:<<g1>> F o
+atom272:<<g1>> F o
+atom393:<<g1>> F o
+atom154:<<g1>> F o
+atom275:<<g1>> F o
+atom396:<<g1>> F s2 and atom395
+atom153:<<g1>> F s2 and atom152
+atom274:<<g1>> F o
+atom395:<<g1>> F o
+atom390:<<g1>> F o
+atom150:<<g1>> F o
+atom271:<<g1>> F o
+atom392:<<g1>> F s2 and atom391
+atom270:<<g1>> F o
+atom391:<<g1>> F o
+atom149:<<g1>> F o
+atom148:<<g1>> F o
+atom269:<<g1>> F o
+atom145:<<g1>> F o
+atom266:<<g1>> F o
+atom387:<<g1>> F o
+atom144:<<g1>> F o
+atom265:<<g1>> F s2 and atom264
+atom386:<<g1>> F s2 and atom385
+atom147:<<g1>> F o
+atom268:<<g1>> F o
+atom389:<<g1>> F s2 and atom388
+atom146:<<g1>> F o
+atom267:<<g1>> F s2 and atom266
+atom388:<<g1>> F o
+atom417:<<g1>> F o
+atom416:<<g1>> F s2 and atom415
+atom419:<<g1>> F o
+atom418:<<g1>> F s2 and atom417
+atom413:<<g1>> F o
+atom412:<<g1>> F s2 and atom411
+atom415:<<g1>> F o
+atom414:<<g1>> F s2 and atom413
+atom411:<<g1>> F o
+atom410:<<g1>> F s2 and atom409
+atom409:<<g1>> F o
+atom406:<<g1>> F s2 and atom405
+atom405:<<g1>> F o
+atom408:<<g1>> F s2 and atom407
+atom407:<<g1>> F o
+atom402:<<g1>> F s2 and atom401
+atom401:<<g1>> F o
+atom404:<<g1>> F s2 and atom403
+atom403:<<g1>> F o
+atom400:<<g1>> F s2 and atom399
+atom0:<<g1>> F o
+atom220:<<g1>> F s2 and atom219
+atom341:<<g1>> F s2 and atom340
+atom340:<<g1>> F o
+atom219:<<g1>> F o
+atom218:<<g1>> F o
+atom339:<<g1>> F s2 and atom338
+atom215:<<g1>> F o
+atom336:<<g1>> F s2 and atom335
+atom214:<<g1>> F o
+atom335:<<g1>> F o
+atom217:<<g1>> F o
+atom338:<<g1>> F o
+atom216:<<g1>> F o
+atom337:<<g1>> F o
+atom211:<<g1>> F s2 and atom210
+atom332:<<g1>> F s2 and atom331
+atom210:<<g1>> F o
+atom331:<<g1>> F o
+atom213:<<g1>> F o
+atom334:<<g1>> F o
+atom212:<<g1>> F o
+atom333:<<g1>> F o
+atom330:<<g1>> F o
+atom451:<<g1>> F s2 and atom450
+atom450:<<g1>> F o
+atom208:<<g1>> F o
+atom329:<<g1>> F s2 and atom328
+atom207:<<g1>> F s2 and atom206
+atom328:<<g1>> F o
+atom449:<<g1>> F s2 and atom448
+atom209:<<g1>> F s2 and atom208
+atom204:<<g1>> F o
+atom325:<<g1>> F s2 and atom324
+atom446:<<g1>> F o
+atom203:<<g1>> F s2 and atom202
+atom324:<<g1>> F o
+atom445:<<g1>> F s2 and atom444
+atom206:<<g1>> F o
+atom327:<<g1>> F o
+atom448:<<g1>> F o
+atom205:<<g1>> F s2 and atom204
+atom326:<<g1>> F o
+atom447:<<g1>> F s2 and atom446
+atom200:<<g1>> F s2 and atom199
+atom321:<<g1>> F s2 and atom320
+atom442:<<g1>> F o
+atom320:<<g1>> F o
+atom441:<<g1>> F s2 and atom440
+atom202:<<g1>> F o
+atom323:<<g1>> F s2 and atom322
+atom444:<<g1>> F o
+atom201:<<g1>> F o
+atom322:<<g1>> F o
+atom443:<<g1>> F s2 and atom442
+atom440:<<g1>> F o
+atom318:<<g1>> F o
+atom439:<<g1>> F o
+atom317:<<g1>> F o
+atom438:<<g1>> F s2 and atom437
+atom319:<<g1>> F s2 and atom318
+atom314:<<g1>> F o
+atom435:<<g1>> F o
+atom313:<<g1>> F o
+atom434:<<g1>> F s2 and atom433
+atom316:<<g1>> F s2 and atom315
+atom437:<<g1>> F o
+atom315:<<g1>> F o
+atom436:<<g1>> F o
+atom310:<<g1>> F o
+atom431:<<g1>> F s2 and atom430
+atom430:<<g1>> F o
+atom312:<<g1>> F o
+atom433:<<g1>> F o
+atom311:<<g1>> F s2 and atom310
+atom432:<<g1>> F o
+atom307:<<g1>> F o
+atom428:<<g1>> F o
+atom306:<<g1>> F o
+atom427:<<g1>> F s2 and atom426
+atom309:<<g1>> F o
+atom308:<<g1>> F s2 and atom307
+atom429:<<g1>> F s2 and atom428
+atom303:<<g1>> F o
+atom424:<<g1>> F o
+atom302:<<g1>> F o
+atom423:<<g1>> F s2 and atom422
+atom305:<<g1>> F o
+atom426:<<g1>> F o
+atom304:<<g1>> F s2 and atom303
+atom425:<<g1>> F s2 and atom424
+atom420:<<g1>> F o
+atom301:<<g1>> F s2 and atom300
+atom422:<<g1>> F o
+atom300:<<g1>> F o
+atom421:<<g1>> F o
+atom18:<<g1>> F o
+atom19:<<g1>> F o
+atom14:<<g1>> F s2 and atom13
+atom15:<<g1>> F o
+atom16:<<g1>> F s2 and atom15
+atom17:<<g1>> F o
+atom10:<<g1>> F o
+atom11:<<g1>> F o
+atom12:<<g1>> F s2 and atom11
+atom13:<<g1>> F o
+atom29:<<g1>> F o
+atom25:<<g1>> F s2 and atom24
+atom26:<<g1>> F o
+atom27:<<g1>> F o
+atom28:<<g1>> F o
+atom21:<<g1>> F s2 and atom20
+atom22:<<g1>> F o
+atom23:<<g1>> F s2 and atom22
+atom24:<<g1>> F o
+atom20:<<g1>> F o
+atom199:<<g1>> F o
+atom196:<<g1>> F o
+atom195:<<g1>> F s2 and atom194
+atom198:<<g1>> F o
+atom197:<<g1>> F s2 and atom196
+atom192:<<g1>> F o
+atom191:<<g1>> F o
+atom194:<<g1>> F o
+atom193:<<g1>> F s2 and atom192
+atom36:<<g1>> F o
+atom37:<<g1>> F o
+atom38:<<g1>> F o
+atom190:<<g1>> F o
+atom39:<<g1>> F o
+atom32:<<g1>> F o
+atom33:<<g1>> F o
+atom34:<<g1>> F o
+atom35:<<g1>> F o
+atom30:<<g1>> F o
+atom31:<<g1>> F o
+atom189:<<g1>> F o
+atom188:<<g1>> F s2 and atom187
+atom47:<<g1>> F s2 and atom46
+atom48:<<g1>> F o
+atom49:<<g1>> F s2 and atom48
+atom43:<<g1>> F s2 and atom42
+atom44:<<g1>> F o
+atom45:<<g1>> F s2 and atom44
+atom46:<<g1>> F o
+atom40:<<g1>> F s2 and atom39
+atom41:<<g1>> F o
+atom42:<<g1>> F o
+atom58:<<g1>> F s2 and atom57
+atom59:<<g1>> F o
+atom54:<<g1>> F s2 and atom53
+atom55:<<g1>> F o
+atom56:<<g1>> F s2 and atom55
+atom57:<<g1>> F o
+atom50:<<g1>> F o
+atom51:<<g1>> F s2 and atom50
+atom52:<<g1>> F o
+atom53:<<g1>> F o
+atom69:<<g1>> F s2 and atom68
+atom65:<<g1>> F o
+atom66:<<g1>> F o
+atom67:<<g1>> F s2 and atom66
+atom68:<<g1>> F o
+atom61:<<g1>> F o
+atom62:<<g1>> F o
+atom63:<<g1>> F o
+atom64:<<g1>> F o
+atom60:<<g1>> F o
+atom76:<<g1>> F o
+atom77:<<g1>> F o
+atom78:<<g1>> F o
+atom79:<<g1>> F o
+atom72:<<g1>> F o
+atom73:<<g1>> F o
+atom74:<<g1>> F o
+atom75:<<g1>> F o
+atom70:<<g1>> F o
+atom71:<<g1>> F s2 and atom70

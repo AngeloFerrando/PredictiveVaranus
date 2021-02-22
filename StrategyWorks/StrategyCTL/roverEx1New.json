@@ -1,0 +1,403 @@
+{
+  "states": [
+    {
+      "name": "s0",
+      "initial" : true
+    },
+    {
+      "name": "o"
+    },
+    {
+      "name": "s01"
+    },
+    {
+      "name": "s02"
+    },
+    {
+      "name": "s03"
+    },
+    {
+      "name": "e"
+    },
+    {
+      "name": "s1"
+    },
+    {
+      "name": "s2"
+    },
+    {
+      "name": "s3"
+    },
+    {
+      "name": "e1"
+    },
+    {
+      "name": "e2"
+    }
+  ],
+  "agents": [
+    {
+      "name": "Rover",
+      "actions": [
+        "chk",
+        "i",
+        "L",
+        "R",
+        "mp"
+      ],
+      "indistinguishableStates": [
+        [
+          "s01",
+          "s02",
+          "s03"
+        ]
+      ]
+    },
+    {
+      "name": "Checker",
+      "actions": [
+        "ok",
+        "i",
+        "ca",
+        "cm",
+        "cw"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "fromState": "s0",
+      "toState": "s01",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "chk"
+          },
+          {
+            "agent": "Checker",
+            "action": "ca"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s02",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "chk"
+          },
+          {
+            "agent": "Checker",
+            "action": "cm"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s03",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "chk"
+          },
+          {
+            "agent": "Checker",
+            "action": "cw"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s01",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s02",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s03",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "o",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "o",
+      "toState": "s1",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "L"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s1",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "R"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "o",
+      "toState": "s3",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "R"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s3",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "L"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s1",
+      "toState": "s2",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "mp"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s2",
+      "toState": "s1",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "L"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s3",
+      "toState": "s2",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "mp"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s2",
+      "toState": "s3",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "R"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s1",
+      "toState": "e1",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "L"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s3",
+      "toState": "e2",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "R"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "e",
+      "toState": "e",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["chk", "i", "L", "R", "mp"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["ok", "i", "ca", "cm", "cw"]
+        }
+      ]
+    },
+    {
+      "fromState": "e1",
+      "toState": "e1",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["chk", "i", "L", "R", "mp"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["ok", "i", "ca", "cm", "cw"]
+        }
+      ]
+    },
+    {
+      "fromState": "e2",
+      "toState": "e2",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["chk", "i", "L", "R", "mp"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["ok", "i", "ca", "cm", "cw"]
+        }
+      ]
+    }
+  ],
+  "group": {
+    "name": "g1",
+    "agents": [
+      "Rover"
+    ]
+  },
+  "formula" : {
+    "group" : "g1",
+    "terms" : ["o"],
+    "ltl" : "F o",
+    "operator" : "and",
+    "sub-formula" : {
+      "group" : "g1",
+      "terms" : ["s2"],
+      "ltl" : "F s2"
+    }
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "states": [
+    {
+      "name": "s0",
+      "initial" : true
+    },
+    {
+      "name": "o"
+    },
+    {
+      "name": "s01"
+    },
+    {
+      "name": "s02"
+    },
+    {
+      "name": "s03"
+    },
+    {
+      "name": "e"
+    },
+    {
+      "name": "s1"
+    },
+    {
+      "name": "s2"
+    },
+    {
+      "name": "s3"
+    },
+    {
+      "name": "e1"
+    },
+    {
+      "name": "e2"
+    },
+    {
+      "name": "d"
+    }
+  ],
+  "agents": [
+    {
+      "name": "Rover",
+      "actions": [
+        "ca",
+        "cm",
+        "cw",
+        "start",
+        "i",
+        "L",
+        "R",
+        "mp",
+        "dst",
+        "ok",
+        "notok"
+      ],
+      "indistinguishableStates": [
+        [
+          "s01",
+          "s02",
+          "s03"
+        ],
+        [
+          "s1",
+          "s3"
+        ]
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "fromState": "s0",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "start"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s01",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "ca"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s01",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s02",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "cm"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s02",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s03",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "cw"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s03",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s01",
+      "toState": "e",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "notok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s02",
+      "toState": "e",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "notok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s03",
+      "toState": "e",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "notok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "o",
+      "toState": "s1",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "L"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s1",
+      "toState": "s2",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "mp"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "o",
+      "toState": "s3",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "R"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s3",
+      "toState": "s2",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "mp"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s1",
+      "toState": "e1",
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["L", "R"]
+        }
+      ]
+    },
+    {
+      "fromState": "s3",
+      "toState": "e2",
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["L", "R"]
+        }
+      ]
+    },
+    {
+      "fromState": "s2",
+      "toState": "d",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "dst"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "d",
+      "toState": "d",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "start", "i", "L", "R", "mp", "dst", "ok", "notok"]
+        }
+      ]
+    },
+    {
+      "fromState": "e",
+      "toState": "e",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "start", "i", "L", "R", "mp", "dst", "ok", "notok"]
+        }
+      ]
+    },
+    {
+      "fromState": "e2",
+      "toState": "e2",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "start", "i", "L", "R", "mp", "dst", "ok", "notok"]
+        }
+      ]
+    },
+    {
+      "fromState": "e1",
+      "toState": "e1",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "start", "i", "L", "R", "mp", "dst", "ok", "notok"]
+        }
+      ]
+    }
+  ],
+  "group": {
+    "name": "g1",
+    "agents": [
+      "Rover"
+    ]
+  },
+  "formula" : {
+    "group" : "g1",
+    "terms" : ["s2"],
+    "ltl" : "F s2",
+    "operator" : "and",
+    "sub-formula" : {
+      "group" : "g1",
+      "terms" : ["d"],
+      "ltl" : "F d"
+    }
+  }
+}

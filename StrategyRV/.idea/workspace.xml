@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8816d9e7-9de3-4a03-943d-efac575297fc" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/main/AppOld.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../5e5f193b3303e30001e1debd" beforeDir="false" afterPath="$PROJECT_DIR$/../5e5f193b3303e30001e1debd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../PredictiveRV-TimedProperties" beforeDir="false" afterPath="$PROJECT_DIR$/../PredictiveRV-TimedProperties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RML" beforeDir="false" afterPath="$PROJECT_DIR$/../RML" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RMLatDibris/compiler" beforeDir="false" afterPath="$PROJECT_DIR$/../RMLatDibris/compiler" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RMLatDibris/examples" beforeDir="false" afterPath="$PROJECT_DIR$/../RMLatDibris/examples" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RMLatDibris/instrumentation" beforeDir="false" afterPath="$PROJECT_DIR$/../RMLatDibris/instrumentation" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RMLatDibris/monitor" beforeDir="false" afterPath="$PROJECT_DIR$/../RMLatDibris/monitor" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ROSMonitoring" beforeDir="false" afterPath="$PROJECT_DIR$/../ROSMonitoring" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ROSRV" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/main/App.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/main/App.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../StreamProcessingRV" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../TExpRVJade" beforeDir="false" afterPath="$PROJECT_DIR$/../TExpRVJade" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../TExpSWIPrologConnector" beforeDir="false" afterPath="$PROJECT_DIR$/../TExpSWIPrologConnector" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.classpath" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.idea/abstraction.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.idea/compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.idea/jarRepositories.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.project" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.settings/org.eclipse.core.resources.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.settings/org.eclipse.jdt.core.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/.settings/org.eclipse.m2e.core.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/ec2-user@ec2-52-47-90-29.eu-west-3.compute.amazonaws.co" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/ec2-user@ec2-52-47-90-29.eu-west-3.compute.amazonaws.com" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/AbstractionUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/App.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/Agent.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/AgentAction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/AtlModel.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/Formula.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/Group.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/JsonObject.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/MultipleAgentAction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/State.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/StateCluster.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/TransformBean.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/beans/Transition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/java/fr/univ_evry/ibisc/atl/abstraction/controllers/AbstractionController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/resources/model.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/resources/static/js/jquery.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/resources/static/js/site.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/resources/static/js/viz.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/src/main/resources/templates/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/abstraction-0.0.1-SNAPSHOT.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/abstraction-0.0.1-SNAPSHOT.jar.original" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/AbstractionUtils.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/App.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/Agent.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/AgentAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/AtlModel.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/Formula.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/Group.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/JsonObject.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/MultipleAgentAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/State.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/StateCluster.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/TransformBean.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/beans/Transition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/fr/univ_evry/ibisc/atl/abstraction/controllers/AbstractionController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/model.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/static/js/jquery.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/static/js/site.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/static/js/viz.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/classes/templates/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/maven-archiver/pom.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../abstraction/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ictcs2020" beforeDir="false" afterPath="$PROJECT_DIR$/../ictcs2020" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../mcapl-mcapl_code" beforeDir="false" afterPath="$PROJECT_DIR$/../mcapl-mcapl_code" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../reelay" beforeDir="false" afterPath="$PROJECT_DIR$/../reelay" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../rosmop" beforeDir="false" afterPath="$PROJECT_DIR$/../rosmop" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../scp19" beforeDir="false" afterPath="$PROJECT_DIR$/../scp19" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../timescales" beforeDir="false" afterPath="$PROJECT_DIR$/../timescales" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectId" id="1oqjU8D7tCyboQ2W4ztY42zFlb1" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="ArquillianJUnit" factoryName="" nameIsGenerated="true">
+      <option name="arquillianRunConfiguration">
+        <value>
+          <option name="containerStateName" value="" />
+        </value>
+      </option>
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8816d9e7-9de3-4a03-943d-efac575297fc" name="Default Changelist" comment="" />
+      <created>1614021027898</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1614021027898</updated>
+      <workItem from="1614021029959" duration="399000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

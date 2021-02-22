@@ -1,0 +1,471 @@
+{
+  "states": [
+    {
+      "name": "sI",
+      "initial" : true
+    },
+    {
+      "name": "o"
+    },
+    {
+      "name": "s0"
+    },
+    {
+      "name": "s01"
+    },
+    {
+      "name": "s02"
+    },
+    {
+      "name": "s03"
+    },
+    {
+      "name": "e"
+    },
+    {
+      "name": "s1"
+    },
+    {
+      "name": "s2"
+    },
+    {
+      "name": "s3"
+    },
+    {
+      "name": "e1"
+    },
+    {
+      "name": "e2"
+    },
+    {
+      "name": "d"
+    }
+  ],
+  "agents": [
+    {
+      "name": "Rover",
+      "actions": [
+        "ca",
+        "cm",
+        "cw",
+        "chk",
+        "i",
+        "L",
+        "R",
+        "mp",
+        "dst"
+      ],
+      "indistinguishableStates": [
+        [
+          "s1",
+          "s3"
+        ]
+      ]
+    },
+    {
+      "name": "Checker",
+      "actions": [
+        "ok",
+        "notok",
+        "i"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "fromState": "sI",
+      "toState": "o",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "dst"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "sI",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "chk"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s01",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "ca"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s01",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s02",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "cm"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s02",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s03",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "cw"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s03",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "ok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s0",
+      "toState": "s0",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s01",
+      "toState": "e",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "notok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s02",
+      "toState": "e",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "notok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s03",
+      "toState": "e",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "i"
+          },
+          {
+            "agent": "Checker",
+            "action": "notok"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "o",
+      "toState": "s1",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "L"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s1",
+      "toState": "s2",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "mp"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "o",
+      "toState": "s3",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "R"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s3",
+      "toState": "s2",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "mp"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "s1",
+      "toState": "e1",
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["L", "R"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["i"]
+        }
+      ]
+    },
+    {
+      "fromState": "s3",
+      "toState": "e2",
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["L", "R"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["i"]
+        }
+      ]
+    },
+    {
+      "fromState": "s2",
+      "toState": "d",
+      "agentActions": [
+        [
+          {
+            "agent": "Rover",
+            "action": "dst"
+          },
+          {
+            "agent": "Checker",
+            "action": "i"
+          }
+        ]
+      ]
+    },
+    {
+      "fromState": "d",
+      "toState": "d",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "chk", "i", "L", "R", "mp", "dst"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["ok", "notok", "i"]
+        }
+      ]
+    },
+    {
+      "fromState": "e",
+      "toState": "e",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "chk", "i", "L", "R", "mp", "dst"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["ok", "notok", "i"]
+        }
+      ]
+    },
+    {
+      "fromState": "e2",
+      "toState": "e2",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "chk", "i", "L", "R", "mp", "dst"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["ok", "notok", "i"]
+        }
+      ]
+    },
+    {
+      "fromState": "e1",
+      "toState": "e1",
+      "defaultTransition": true,
+      "multipleAgentActions" : [
+        {
+          "agent": "Rover",
+          "actions" : ["ca", "cm", "cw", "chk", "i", "L", "R", "mp", "dst"]
+        },
+        {
+          "agent": "Checker",
+          "actions" : ["ok", "notok", "i"]
+        }
+      ]
+    }
+  ],
+  "group": {
+    "name": "g1",
+    "agents": [
+      "Rover", "Checker"
+    ]
+  },
+  "formula" : {
+    "group" : "g1",
+    "terms" : ["s01"],
+    "ltl" : "F s01",
+    "operator" : "and",
+    "sub-formula" : {
+      "group" : "g1",
+      "terms" : ["s02"],
+      "ltl" : "F s02",
+      "operator": "and",
+      "sub-formula": {
+        "group" : "g1",
+        "terms" : ["s03"],
+        "ltl" : "F s03",
+        "operator" : "or",
+        "sub-formula" : {
+          "group" : "g1",
+          "terms" : ["s2"],
+          "ltl" : "F s2",
+          "operator" : "and",
+          "sub-formula" : {
+            "group" : "g1",
+            "terms" : ["d"],
+            "ltl" : "F d"
+          }
+        }
+      }
+    }
+  }
+}
