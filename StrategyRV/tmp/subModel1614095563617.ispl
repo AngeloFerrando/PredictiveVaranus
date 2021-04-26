@@ -1,0 +1,68 @@
+
+Agent Environment
+	Vars :
+		s1 : boolean;
+		o : boolean;
+		s2 : boolean;
+		sink : boolean;
+	end Vars
+	Actions = {};
+	Protocol :
+	end Protocol
+	Evolution :
+		s1 = false and o = true  if s1 = true and o = false and (Rover.Action = R and Checker.Action = i);
+		s1 = false and s2 = true  if s1 = true and s2 = false and (Rover.Action = mp and Checker.Action = i);
+		s2 = false and sink = true  if s2 = true and sink = false and (Checker.Action = i and Rover.Action = R);
+		o = false and s1 = true  if o = true and s1 = false and (Rover.Action = L and Checker.Action = i);
+		s1 = false and sink = true  if s1 = true and sink = false and (Checker.Action = i and Rover.Action = L);
+		s2 = false and s1 = true  if s2 = true and s1 = false and (Rover.Action = L and Checker.Action = i);
+		o = false and sink = true  if o = true and sink = false and (Checker.Action = i and Rover.Action = R);
+	end Evolution
+end Agent
+Agent Rover
+	Lobsvars = {s1, o, s2, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ca,cm,cw,finish,i,L,R,mp};
+	Protocol : 
+		Environment.s1 = true : {R,mp,L};
+		Environment.s2 = true : {R,L};
+		Environment.o = true : {L,R};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Agent Checker
+	Lobsvars = {s1, o, s2, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ok,notok,i};
+	Protocol : 
+		Environment.s1 = true : {i};
+		Environment.s2 = true : {i};
+		Environment.o = true : {i};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Evaluation
+	o if (Environment.o = true);
+	end Evaluation
+	InitStates
+		Environment.s1 = false and 
+		Environment.o = true and 
+		Environment.s2 = false and 
+		Environment.sink = false and 
+		Rover.play = true and 
+		Checker.play = true;
+	end InitStates
+Groups
+	g1={Rover};
+end Groups
+Formulae
+	<g1>F o;
+end Formulae

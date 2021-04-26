@@ -1,0 +1,106 @@
+
+Agent Environment
+	Vars :
+		s02 : boolean;
+		e : boolean;
+		s03 : boolean;
+		s0 : boolean;
+		atom103 : boolean;
+		o : boolean;
+		sink : boolean;
+	end Vars
+	Actions = {};
+	Protocol :
+	end Protocol
+	Evolution :
+		s03 = false and e = true  if s03 = true and e = false and (Rover.Action = i and Checker.Action = notok);
+		o = false and sink = true  if o = true and sink = false and (Checker.Action = i and Rover.Action = R);
+		s0 = false and atom103 = false and sink = true  if s0 = true and atom103 = true and sink = false and (Checker.Action = i and Rover.Action = ca);
+		s0 = false and atom103 = false and s02 = true  if s0 = true and atom103 = true and s02 = false and (Rover.Action = cm and Checker.Action = i);
+		s03 = false and s0 = true and atom103 = true  if s03 = true and s0 = false and atom103 = false and (Rover.Action = i and Checker.Action = ok);
+		s02 = false and e = true  if s02 = true and e = false and (Rover.Action = i and Checker.Action = notok);
+		s0 = false and atom103 = false and s03 = true  if s0 = true and atom103 = true and s03 = false and (Rover.Action = cw and Checker.Action = i);
+		o = false and sink = true  if o = true and sink = false and (Checker.Action = i and Rover.Action = L);
+		e = true  if e = true and ((Rover.Action = ca and Checker.Action = ok) or 
+					(Rover.Action = ca and Checker.Action = notok) or 
+					(Rover.Action = ca and Checker.Action = i) or 
+					(Rover.Action = cm and Checker.Action = ok) or 
+					(Rover.Action = cm and Checker.Action = notok) or 
+					(Rover.Action = cm and Checker.Action = i) or 
+					(Rover.Action = cw and Checker.Action = ok) or 
+					(Rover.Action = cw and Checker.Action = notok) or 
+					(Rover.Action = cw and Checker.Action = i) or 
+					(Rover.Action = finish and Checker.Action = ok) or 
+					(Rover.Action = finish and Checker.Action = notok) or 
+					(Rover.Action = finish and Checker.Action = i) or 
+					(Rover.Action = i and Checker.Action = ok) or 
+					(Rover.Action = i and Checker.Action = notok) or 
+					(Rover.Action = i and Checker.Action = i) or 
+					(Rover.Action = L and Checker.Action = ok) or 
+					(Rover.Action = L and Checker.Action = notok) or 
+					(Rover.Action = L and Checker.Action = i) or 
+					(Rover.Action = R and Checker.Action = ok) or 
+					(Rover.Action = R and Checker.Action = notok) or 
+					(Rover.Action = R and Checker.Action = i) or 
+					(Rover.Action = mp and Checker.Action = ok) or 
+					(Rover.Action = mp and Checker.Action = notok) or 
+					(Rover.Action = mp and Checker.Action = i));
+		s0 = false and atom103 = false and o = true  if s0 = true and atom103 = true and o = false and (Rover.Action = finish and Checker.Action = i);
+		s02 = false and s0 = true and atom103 = true  if s02 = true and s0 = false and atom103 = false and (Rover.Action = i and Checker.Action = ok);
+	end Evolution
+end Agent
+Agent Rover
+	Lobsvars = {s02, e, s03, s0, atom103, o, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ca,cm,cw,finish,i,L,R,mp};
+	Protocol : 
+		Environment.s02 = true : {i};
+		Environment.e = true : {ca,cm,cw,finish,i,L,R,mp};
+		Environment.s03 = true : {i};
+		Environment.s0 = true and Environment.atom103 = true : {ca,cm,cw,finish};
+		Environment.o = true : {R,L};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Agent Checker
+	Lobsvars = {s02, e, s03, s0, atom103, o, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ok,notok,i};
+	Protocol : 
+		Environment.s02 = true : {notok,ok};
+		Environment.e = true : {ok,notok,i};
+		Environment.s03 = true : {notok,ok};
+		Environment.s0 = true and Environment.atom103 = true : {i};
+		Environment.o = true : {i};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Evaluation
+	s2 if (Environment.s2 = true);
+	atom103 if (Environment.atom103 = true);
+	end Evaluation
+	InitStates
+		Environment.s02 = false and 
+		Environment.e = false and 
+		Environment.s03 = false and 
+		Environment.s0 = true and 
+		Environment.atom103 = true and 
+		Environment.o = false and 
+		Environment.sink = false and 
+		Rover.play = true and 
+		Checker.play = true;
+	end InitStates
+Groups
+	g1={Rover};
+end Groups
+Formulae
+	<g1>F s2 and atom103;
+end Formulae

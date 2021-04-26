@@ -1,0 +1,69 @@
+
+Agent Environment
+	Vars :
+		s03 : boolean;
+		s0 : boolean;
+		o : boolean;
+		sink : boolean;
+	end Vars
+	Actions = {};
+	Protocol :
+	end Protocol
+	Evolution :
+		s0 = false and s03 = true  if s0 = true and s03 = false and (Rover.Action = cw and Checker.Action = i);
+		s0 = false and sink = true  if s0 = true and sink = false and (Checker.Action = i and Rover.Action = ca);
+		s0 = false and o = true  if s0 = true and o = false and (Rover.Action = finish and Checker.Action = i);
+		o = false and sink = true  if o = true and sink = false and (Checker.Action = i and Rover.Action = R);
+		o = false and sink = true  if o = true and sink = false and (Checker.Action = i and Rover.Action = L);
+		s03 = false and sink = true  if s03 = true and sink = false and (Checker.Action = notok and Rover.Action = i);
+		s0 = false and sink = true  if s0 = true and sink = false and (Checker.Action = i and Rover.Action = cm);
+		s03 = false and s0 = true  if s03 = true and s0 = false and (Rover.Action = i and Checker.Action = ok);
+	end Evolution
+end Agent
+Agent Rover
+	Lobsvars = {s03, s0, o, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ca,cm,cw,finish,i,L,R,mp};
+	Protocol : 
+		Environment.s03 = true : {i};
+		Environment.s0 = true : {cw,ca,finish,cm};
+		Environment.o = true : {R,L};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Agent Checker
+	Lobsvars = {s03, s0, o, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ok,notok,i};
+	Protocol : 
+		Environment.s03 = true : {notok,ok};
+		Environment.s0 = true : {i};
+		Environment.o = true : {i};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Evaluation
+	o if (Environment.o = true);
+	end Evaluation
+	InitStates
+		Environment.s03 = true and 
+		Environment.s0 = false and 
+		Environment.o = false and 
+		Environment.sink = false and 
+		Rover.play = true and 
+		Checker.play = true;
+	end InitStates
+Groups
+	g1={Rover};
+end Groups
+Formulae
+	<g1>F o;
+end Formulae

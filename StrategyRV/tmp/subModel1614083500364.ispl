@@ -1,0 +1,90 @@
+
+Agent Environment
+	Vars :
+		s02 : boolean;
+		s0 : boolean;
+		atom88 : boolean;
+		atom89 : boolean;
+		s1 : boolean;
+		s2 : boolean;
+		o : boolean;
+		sink : boolean;
+	end Vars
+	Actions = {};
+	Protocol :
+	end Protocol
+	Evolution :
+		o = false and s1 = true  if o = true and s1 = false and (Rover.Action = L and Checker.Action = i);
+		s02 = false and sink = true  if s02 = true and sink = false and (Checker.Action = notok and Rover.Action = i);
+		s02 = false and s0 = true and atom88 = true and atom89 = true  if s02 = true and s0 = false and atom88 = false and atom89 = false and (Rover.Action = i and Checker.Action = ok);
+		s0 = false and atom88 = false and atom89 = false and sink = true  if s0 = true and atom88 = true and atom89 = true and sink = false and (Checker.Action = i and Rover.Action = ca);
+		s1 = false and s2 = true  if s1 = true and s2 = false and (Rover.Action = mp and Checker.Action = i);
+		o = false and sink = true  if o = true and sink = false and (Checker.Action = i and Rover.Action = R);
+		s1 = false and o = true  if s1 = true and o = false and (Rover.Action = R and Checker.Action = i);
+		s0 = false and atom88 = false and atom89 = false and s02 = true  if s0 = true and atom88 = true and atom89 = true and s02 = false and (Rover.Action = cm and Checker.Action = i);
+		s0 = false and atom88 = false and atom89 = false and o = true  if s0 = true and atom88 = true and atom89 = true and o = false and (Rover.Action = finish and Checker.Action = i);
+		s1 = false and sink = true  if s1 = true and sink = false and (Checker.Action = i and Rover.Action = L);
+		s0 = false and atom88 = false and atom89 = false and sink = true  if s0 = true and atom88 = true and atom89 = true and sink = false and (Checker.Action = i and Rover.Action = cw);
+		s2 = false and sink = true  if s2 = true and sink = false and (Checker.Action = i and Rover.Action = R);
+		s2 = false and s1 = true  if s2 = true and s1 = false and (Rover.Action = L and Checker.Action = i);
+	end Evolution
+end Agent
+Agent Rover
+	Lobsvars = {s02, s0, atom88, atom89, s1, s2, o, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ca,cm,cw,finish,i,L,R,mp};
+	Protocol : 
+		Environment.s02 = true : {i};
+		Environment.s0 = true and Environment.atom88 = true and Environment.atom89 = true : {ca,cm,finish,cw};
+		Environment.s1 = true : {mp,R,L};
+		Environment.o = true : {L,R};
+		Environment.s2 = true : {R,L};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Agent Checker
+	Lobsvars = {s02, s0, atom88, atom89, s1, s2, o, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ok,notok,i};
+	Protocol : 
+		Environment.s02 = true : {notok,ok};
+		Environment.s0 = true and Environment.atom88 = true and Environment.atom89 = true : {i};
+		Environment.s1 = true : {i};
+		Environment.o = true : {i};
+		Environment.s2 = true : {i};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Evaluation
+	s01 if (Environment.s01 = true);
+	s02 if (Environment.s02 = true);
+	s03 if (Environment.s03 = true);
+	o if (Environment.o = true);
+	atom89 if (Environment.atom89 = true);
+	end Evaluation
+	InitStates
+		Environment.s02 = false and 
+		Environment.s0 = true and 
+		Environment.atom88 = true and 
+		Environment.atom89 = true and 
+		Environment.s1 = false and 
+		Environment.s2 = false and 
+		Environment.o = false and 
+		Environment.sink = false and 
+		Rover.play = true and 
+		Checker.play = true;
+	end InitStates
+Groups
+	g1={Rover};
+end Groups
+Formulae
+	<g1>F((Fs01 and Fs02 and Fs03) and (XF o)) and atom89;
+end Formulae

@@ -1,0 +1,58 @@
+
+Agent Environment
+	Vars :
+		o : boolean;
+		atom0 : boolean;
+		sink : boolean;
+	end Vars
+	Actions = {};
+	Protocol :
+	end Protocol
+	Evolution :
+		o = false and atom0 = false and sink = true  if o = true and atom0 = true and sink = false and (Checker.Action = i and Rover.Action = R);
+		o = false and atom0 = false and sink = true  if o = true and atom0 = true and sink = false and (Checker.Action = i and Rover.Action = L);
+	end Evolution
+end Agent
+Agent Rover
+	Lobsvars = {o, atom0, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ca,cm,cw,finish,i,L,R,mp};
+	Protocol : 
+		Environment.o = true and Environment.atom0 = true : {R,L};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Agent Checker
+	Lobsvars = {o, atom0, sink};
+	Vars : 
+		play : boolean;
+	end Vars
+	Actions = {ok,notok,i};
+	Protocol : 
+		Environment.o = true and Environment.atom0 = true : {i};
+	end Protocol
+	Evolution : 
+		play = true if play = true;
+	end Evolution
+end Agent
+Evaluation
+	s2 if (Environment.s2 = true);
+	atom0 if (Environment.atom0 = true);
+	end Evaluation
+	InitStates
+		Environment.o = true and 
+		Environment.atom0 = true and 
+		Environment.sink = false and 
+		Rover.play = true and 
+		Checker.play = true;
+	end InitStates
+Groups
+	g1={Rover};
+end Groups
+Formulae
+	<g1>F s2 and atom0;
+end Formulae
