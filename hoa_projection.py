@@ -54,21 +54,21 @@ def _sanitize_properties_line(line):
     return None, True
 
 
-def _replace_ap_tokens_in_formula(formula, projection):
+def _replace_ap_tokens_in_formula(formula, replacement_map):
     updated = formula
     # Replace longest names first to avoid partial-prefix substitutions.
-    for source_ap, projected_ap in sorted(projection.items(), key=lambda item: len(item[0]), reverse=True):
+    for source_ap, replacement in sorted(replacement_map.items(), key=lambda item: len(item[0]), reverse=True):
         # AP names are rendered as identifiers in explicit-label HOA formulas.
         # Use conservative boundaries to avoid touching larger identifiers.
         pattern = r"(?<![A-Za-z0-9_.])" + re.escape(source_ap) + r"(?![A-Za-z0-9_.])"
-        updated = re.sub(pattern, projected_ap, updated)
+        updated = re.sub(pattern, replacement, updated)
     return updated
 
 
-def _project_label_blocks_in_line(line, projection):
+def _project_label_blocks_in_line(line, replacement_map):
     def _replace_block(match):
         formula = match.group(1)
-        return "[" + _replace_ap_tokens_in_formula(formula, projection) + "]"
+        return "[" + _replace_ap_tokens_in_formula(formula, replacement_map) + "]"
 
     return LABEL_BLOCK_PATTERN.sub(_replace_block, line)
 
@@ -88,6 +88,10 @@ def project_hoa_text(hoa_text, prefix="p"):
         raise ValueError("Could not find AP line in HOA file.")
 
     projection = build_projection_map(ap_names, prefix=prefix)
+    # For HOA labels, Spot parsers are robust with AP indices (0..n-1).
+    # Keep AP names in header as p0.. for external mapping, but rewrite
+    # label formulas to numeric AP references.
+    label_replacements = {name: str(index) for index, name in enumerate(ap_names)}
     projected_ap_names = [projection[name] for name in ap_names]
     lines[ap_line_index] = _format_ap_line(projected_ap_names)
 
@@ -96,7 +100,7 @@ def project_hoa_text(hoa_text, prefix="p"):
         sanitized_line, drop_line = _sanitize_properties_line(line)
         if drop_line:
             continue
-        projected_line = _project_label_blocks_in_line(sanitized_line, projection)
+        projected_line = _project_label_blocks_in_line(sanitized_line, label_replacements)
         sanitized_lines.append(projected_line)
 
     return "\n".join(sanitized_lines) + ("\n" if hoa_text.endswith("\n") else ""), projection, ap_names
