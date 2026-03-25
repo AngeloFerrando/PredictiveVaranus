@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import time
+import traceback
 
 from hoa_projection import project_hoa_file
 
@@ -469,6 +470,7 @@ async def run_online_pipeline(
         remote_addr = getattr(client_ws, "remote_address", None)
         active_clients.add(str(remote_addr))
         log_pipeline("client connected: {addr}".format(addr=remote_addr))
+        print("[CLIENT] connected: {addr}".format(addr=remote_addr), flush=True)
         event_index = 0
 
         varanus_ws = await connect_varanus_ws(websockets, varanus_url)
@@ -600,6 +602,16 @@ async def run_online_pipeline(
                             response["predictive_debug"] = step_info
                         await client_ws.send(json.dumps(response))
                     except Exception as error:
+                        print(
+                            "[EVENT {idx}] ERROR type={etype} message={msg}".format(
+                                idx=event_index,
+                                etype=error.__class__.__name__,
+                                msg=shorten(str(error), 320),
+                            ),
+                            flush=True,
+                        )
+                        if debug:
+                            traceback.print_exc()
                         if is_websocket_closed_error(error):
                             break
                         try:
@@ -613,6 +625,7 @@ async def run_online_pipeline(
             await varanus_ws.close()
             active_clients.discard(str(remote_addr))
             log_pipeline("client disconnected: {addr}".format(addr=remote_addr))
+            print("[CLIENT] disconnected: {addr}".format(addr=remote_addr), flush=True)
 
     print(f"Online predictive monitor listening on ws://{host}:{port}")
     print(f"Varanus gate expected at ws://{varanus_host}:{varanus_port}")
