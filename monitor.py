@@ -12,10 +12,12 @@ from hoa_projection import project_hoa_file
 
 DEFAULT_VARANUS_HOST = "127.0.0.1"
 DEFAULT_VARANUS_PORT = 5087
+SHOW_PIPELINE_LOGS = False
 
 
 def log_pipeline(message):
-    print("[PIPELINE] " + str(message), flush=True)
+    if SHOW_PIPELINE_LOGS:
+        print("[PIPELINE] " + str(message), flush=True)
 
 
 def ensure_log_dir():
@@ -270,16 +272,16 @@ def format_event_overview(raw_message, gate_reply):
     )
 
 
-def print_event_summary(index, overview, gate_verdict, predictive_text, final_verdict, decision_source, reason=None):
+def print_event_summary(index, overview, gate_verdict, ltl_text, final_verdict, decision_source, reason=None):
     reason_suffix = ""
     if reason:
         reason_suffix = " reason={reason}".format(reason=reason)
     print(
-        "[EVENT {idx}] {overview} varanus={varanus} predictive={predictive} final={final} source={source}{reason}".format(
+        "[EVENT {idx}] {overview} varanus={varanus} ltl={ltl} final={final} source={source}{reason}".format(
             idx=index,
             overview=overview,
             varanus=gate_verdict,
-            predictive=predictive_text,
+            ltl=ltl_text,
             final=final_verdict,
             source=decision_source,
             reason=reason_suffix,
@@ -459,10 +461,14 @@ async def run_online_pipeline(
     spot, websockets, PredictiveRuntime, Verdict = import_predictive_runtime_dependencies()
     projected_symbols = set(projection_map.values())
     varanus_url = f"ws://{varanus_host}:{varanus_port}"
+    active_clients = set()
+    counters = {"events": 0}
 
     async def handler(client_ws, path=None):
         runtime = PredictiveRuntime(ltl_formula, spot.automaton(projected_hoa_path))
-        log_pipeline("client connected: {addr}".format(addr=getattr(client_ws, "remote_address", None)))
+        remote_addr = getattr(client_ws, "remote_address", None)
+        active_clients.add(str(remote_addr))
+        log_pipeline("client connected: {addr}".format(addr=remote_addr))
         event_index = 0
 
         varanus_ws = await connect_varanus_ws(websockets, varanus_url)
@@ -476,6 +482,7 @@ async def run_online_pipeline(
 
                     try:
                         event_index += 1
+                        counters["events"] += 1
                         gate_reply = await gate_with_varanus(varanus_ws, raw_message)
                         gate_verdict = str(gate_reply.get("verdict", "")).lower()
                         overview = format_event_overview(raw_message, gate_reply)
@@ -500,6 +507,7 @@ async def run_online_pipeline(
                             response = with_legacy_top_level_fields({
                                 "status": "blocked",
                                 "verdict": gate_reply.get("verdict", "false"),
+                                "ltl_verdict": "-",
                                 "decision_source": "varanus",
                                 "reason": "varanus_rejected_or_ignored",
                                 "varanus": gate_reply,
@@ -526,6 +534,7 @@ async def run_online_pipeline(
                             response = with_legacy_top_level_fields({
                                 "status": "blocked",
                                 "verdict": gate_reply.get("verdict", "false"),
+                                "ltl_verdict": "-",
                                 "decision_source": "varanus",
                                 "reason": "missing_parsed_event",
                                 "varanus": gate_reply,
@@ -584,6 +593,7 @@ async def run_online_pipeline(
                             "varanus": gate_reply,
                             "projected_event": projected_event,
                             "predictive_verdict": predictive_text,
+                            "ltl_verdict": predictive_text,
                             "predictive_reason": predictive_reason,
                         }, gate_reply)
                         if debug:
@@ -601,15 +611,19 @@ async def run_online_pipeline(
                     raise
         finally:
             await varanus_ws.close()
-            log_pipeline("client disconnected: {addr}".format(addr=getattr(client_ws, "remote_address", None)))
+            active_clients.discard(str(remote_addr))
+            log_pipeline("client disconnected: {addr}".format(addr=remote_addr))
 
     print(f"Online predictive monitor listening on ws://{host}:{port}")
     print(f"Varanus gate expected at ws://{varanus_host}:{varanus_port}")
+    print("Waiting for events. Each event will print as: [EVENT N] ...")
     async with websockets.serve(handler, host, port):
         await asyncio.Future()
 
 
 def main():
+    global SHOW_PIPELINE_LOGS
+
     parser = argparse.ArgumentParser(description="Monitor script for Varanus-first predictive LTL.")
     parser.add_argument("config", help="Path to the Varanus config.yaml file.", type=str)
     parser.add_argument("ltl", help="LTL formula to verify.", type=str)
@@ -637,6 +651,7 @@ def main():
         help="Print detailed diagnostics (HOA metadata, AP mapping, and predictive step reasons).",
     )
     args = parser.parse_args()
+    SHOW_PIPELINE_LOGS = bool(args.debug)
 
     offline_mode = args.offline or not args.online
 
