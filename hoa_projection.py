@@ -40,6 +40,19 @@ def build_projection_map(ap_names, prefix="p"):
     return {name: f"{prefix}{index}" for index, name in enumerate(ap_names)}
 
 
+def _sanitize_properties_line(line):
+    stripped = line.strip()
+    if not stripped.startswith("properties:"):
+        return line, False
+
+    tokens = stripped[len("properties:"):].strip().split()
+    filtered = [token for token in tokens if token != "deterministic"]
+
+    if filtered:
+        return "properties: " + " ".join(filtered), False
+    return None, True
+
+
 def project_hoa_text(hoa_text, prefix="p"):
     lines = hoa_text.splitlines()
     ap_line_index = None
@@ -57,7 +70,15 @@ def project_hoa_text(hoa_text, prefix="p"):
     projection = build_projection_map(ap_names, prefix=prefix)
     projected_ap_names = [projection[name] for name in ap_names]
     lines[ap_line_index] = _format_ap_line(projected_ap_names)
-    return "\n".join(lines) + ("\n" if hoa_text.endswith("\n") else ""), projection, ap_names
+
+    sanitized_lines = []
+    for line in lines:
+        sanitized_line, drop_line = _sanitize_properties_line(line)
+        if drop_line:
+            continue
+        sanitized_lines.append(sanitized_line)
+
+    return "\n".join(sanitized_lines) + ("\n" if hoa_text.endswith("\n") else ""), projection, ap_names
 
 
 def _default_projected_path(path, suffix):
