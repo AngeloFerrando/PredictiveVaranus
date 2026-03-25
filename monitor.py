@@ -133,6 +133,25 @@ async def gate_with_varanus(varanus_ws, raw_message):
         return {"verdict": "error", "raw_reply": reply_message}
 
 
+def with_legacy_top_level_fields(payload, gate_reply):
+    """Keep backward-compatible top-level fields expected by legacy ROS clients."""
+    response = dict(payload)
+    if not isinstance(gate_reply, dict):
+        return response
+
+    for key in ("topic", "time", "value", "header", "pose", "type", "parsed_event"):
+        if key in gate_reply and key not in response:
+            response[key] = gate_reply.get(key)
+
+    if "event" not in response and "parsed_event" in gate_reply:
+        response["event"] = gate_reply.get("parsed_event")
+    if "varanus_verdict" not in response and "verdict" in gate_reply:
+        response["varanus_verdict"] = gate_reply.get("verdict")
+    if "varanus" not in response:
+        response["varanus"] = gate_reply
+    return response
+
+
 def import_predictive_runtime_dependencies():
     try:
         import spot
@@ -254,13 +273,13 @@ async def run_online_pipeline(
                         )
 
                         if gate_verdict != "currently_true":
-                            response = {
+                            response = with_legacy_top_level_fields({
                                 "status": "blocked",
                                 "verdict": gate_reply.get("verdict", "false"),
                                 "decision_source": "varanus",
                                 "reason": "varanus_rejected_or_ignored",
                                 "varanus": gate_reply,
-                            }
+                            }, gate_reply)
                             log_pipeline(
                                 "decision source=varanus verdict={verdict}".format(
                                     verdict=response["verdict"]
@@ -271,13 +290,13 @@ async def run_online_pipeline(
 
                         parsed_event = gate_reply.get("parsed_event")
                         if parsed_event is None:
-                            response = {
+                            response = with_legacy_top_level_fields({
                                 "status": "blocked",
                                 "verdict": gate_reply.get("verdict", "false"),
                                 "decision_source": "varanus",
                                 "reason": "missing_parsed_event",
                                 "varanus": gate_reply,
-                            }
+                            }, gate_reply)
                             log_pipeline(
                                 "decision source=varanus verdict={verdict} reason=missing_parsed_event".format(
                                     verdict=response["verdict"]
@@ -317,18 +336,15 @@ async def run_online_pipeline(
                             )
                         )
 
-                        await client_ws.send(
-                            json.dumps(
-                                {
-                                    "status": "ok",
-                                    "verdict": final_verdict,
-                                    "decision_source": decision_source,
-                                    "varanus": gate_reply,
-                                    "projected_event": projected_event,
-                                    "predictive_verdict": predictive_text,
-                                }
-                            )
-                        )
+                        response = with_legacy_top_level_fields({
+                            "status": "ok",
+                            "verdict": final_verdict,
+                            "decision_source": decision_source,
+                            "varanus": gate_reply,
+                            "projected_event": projected_event,
+                            "predictive_verdict": predictive_text,
+                        }, gate_reply)
+                        await client_ws.send(json.dumps(response))
                     except Exception as error:
                         if is_websocket_closed_error(error):
                             break

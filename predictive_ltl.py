@@ -26,35 +26,52 @@ class PredictiveMonitor:
         self.__product_not_phi = spot.product(model, not_buchi)
         self.__model = model
         self.__last_verdict = Verdict.uu
+        self.__phi_states = set([self.__product_phi.get_init_state_number()])
+        self.__not_phi_states = set([self.__product_not_phi.get_init_state_number()])
+
+    def __advance_states(self, automaton, current_states, event):
+        next_states = set()
+        for src in current_states:
+            for t in automaton.out(src):
+                if (t.cond & event) != buddy.bddfalse:
+                    next_states.add(t.dst)
+        return next_states
+
+    def __set_initial_states(self, automaton, states):
+        if len(states) == 1:
+            automaton.set_init_state(next(iter(states)))
+            return
+        automaton.set_univ_init_state(sorted(states))
+
+    def __language_empty_from(self, automaton, states):
+        self.__set_initial_states(automaton, states)
+        return automaton.is_empty()
     def next(self, event_tuple):
         # pj_event = project([event_tuple[0]], self.__model)
         # if not pj_event:
         #     return self.__last_verdict
         event = event_tuple[1]
-        next = False
-        l = 0
-        for t in self.__product_phi.out(self.__product_phi.get_init_state_number()):
-            if (t.cond & event) != buddy.bddfalse and len(spot.bdd_format_formula(self.__product_phi.get_dict(), t.cond)) > l:
-                self.__product_phi.set_init_state(t.dst)
-                next = True
-                l = len(spot.bdd_format_formula(self.__product_phi.get_dict(), t.cond))
-        if not next:
+        next_phi_states = self.__advance_states(self.__product_phi, self.__phi_states, event)
+        if not next_phi_states:
             self.__last_verdict = Verdict.ff
             return Verdict.ff
-        next = False
-        l = 0
-        for t in self.__product_not_phi.out(self.__product_not_phi.get_init_state_number()):
-            if (t.cond & event) != buddy.bddfalse and len(spot.bdd_format_formula(self.__product_not_phi.get_dict(), t.cond)) > l:
-                self.__product_not_phi.set_init_state(t.dst)
-                next = True
-                l = len(spot.bdd_format_formula(self.__product_not_phi.get_dict(), t.cond))
-        if not next:
+
+        next_not_phi_states = self.__advance_states(
+            self.__product_not_phi,
+            self.__not_phi_states,
+            event,
+        )
+        if not next_not_phi_states:
             self.__last_verdict = Verdict.tt
             return Verdict.tt
-        if self.__product_phi.is_empty():
+
+        self.__phi_states = next_phi_states
+        self.__not_phi_states = next_not_phi_states
+
+        if self.__language_empty_from(self.__product_phi, self.__phi_states):
             self.__last_verdict = Verdict.ff
             return Verdict.ff
-        if self.__product_not_phi.is_empty():
+        if self.__language_empty_from(self.__product_not_phi, self.__not_phi_states):
             self.__last_verdict = Verdict.tt
             return Verdict.tt
         self.__last_verdict = Verdict.uu
