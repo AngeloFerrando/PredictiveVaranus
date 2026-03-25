@@ -2,8 +2,10 @@ import os
 import sys
 import subprocess
 import argparse
+import asyncio
+import json
 
-from hoa_projection import project_model_and_trace
+from hoa_projection import project_model_and_trace, project_hoa_file
 
 
 def find_generated_hoa():
@@ -41,34 +43,153 @@ def run_predictive_ltl(ltl_formula, model_file, trace_file):
         print(f"Error while running predictive_ltl: {e}")
         sys.exit(1)
 
+
+def parse_event_message(message):
+    if isinstance(message, bytes):
+        message = message.decode("utf-8", errors="replace")
+
+    stripped = message.strip()
+    if not stripped:
+        return None
+
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError:
+        return stripped
+
+    if isinstance(payload, str):
+        return payload
+
+    if isinstance(payload, dict):
+        for key in ("event", "name", "label"):
+            if key in payload and payload[key] is not None:
+                return str(payload[key])
+
+        if "channel" in payload:
+            channel = str(payload["channel"])
+            params = payload.get("params")
+            if params is None:
+                return channel
+            return f"{channel}.{params}"
+
+    return stripped
+
+
+def project_online_event(raw_event, projection_map, projected_symbols):
+    if raw_event in projection_map:
+        return projection_map[raw_event]
+    if raw_event in projected_symbols:
+        return raw_event
+    raise ValueError(f"Event '{raw_event}' is not present in the projected HOA AP map.")
+
+
+async def run_predictive_ltl_online(ltl_formula, model_file, projection_map, host, port):
+    import spot
+    import websockets
+    from predictive_ltl import PredictiveRuntime, Verdict
+
+    projected_symbols = set(projection_map.values())
+
+    async def handler(websocket, path=None):
+        runtime = PredictiveRuntime(ltl_formula, spot.automaton(model_file))
+        async for message in websocket:
+            try:
+                raw_event = parse_event_message(message)
+                if raw_event is None:
+                    await websocket.send(json.dumps({"status": "ignored", "reason": "empty message"}))
+                    continue
+
+                projected_event = project_online_event(raw_event, projection_map, projected_symbols)
+                verdict = runtime.step(projected_event)
+                if verdict == Verdict.tt:
+                    verdict_text = "true"
+                elif verdict == Verdict.ff:
+                    verdict_text = "false"
+                else:
+                    verdict_text = "?"
+                await websocket.send(
+                    json.dumps(
+                        {
+                            "status": "ok",
+                            "event": raw_event,
+                            "projected_event": projected_event,
+                            "verdict": verdict_text,
+                        }
+                    )
+                )
+            except Exception as error:
+                await websocket.send(json.dumps({"status": "error", "error": str(error)}))
+
+    print(f"Online predictive monitor listening on ws://{host}:{port}")
+    async with websockets.serve(handler, host, port):
+        await asyncio.Future()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Monitor script to run varanus and predictive_ltl.")
     parser.add_argument("config", help="Path to the config.yaml file for varanus.", type=str)
     parser.add_argument("ltl", help="LTL formula to verify.", type=str)
-    parser.add_argument("trace", help="Path to the trace file.", type=str)
+    parser.add_argument("trace", nargs="?", help="Path to the trace file (offline mode only).", type=str)
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--offline", action="store_true", help="Run offline monitoring with a trace file.")
+    mode_group.add_argument("--online", action="store_true", help="Run online monitoring via websocket.")
+    parser.add_argument("--host", default="127.0.0.1", help="Websocket host for online mode.")
+    parser.add_argument("--port", type=int, default=5087, help="Websocket port for online mode.")
     args = parser.parse_args()
+
+    offline_mode = args.offline or not args.online
+    if offline_mode and not args.trace:
+        parser.error("trace is required in offline mode.")
 
     # Step 1: Run Varanus to generate a HOA automaton.
     run_varanus(args.config)
 
-    # Step 2: Project HOA AP names + trace events to proposition-only symbols.
-    try:
-        generated_hoa = find_generated_hoa()
-        projected_hoa, projected_trace = project_model_and_trace(
-            input_hoa_path=generated_hoa,
-            input_trace_path=args.trace,
-            output_hoa_path="automaton_projected.hoa",
-            output_trace_path="trace_projected.txt",
-            mapping_output_path="event_projection_map.json",
-            prefix="p",
-            strict_trace=True,
-        )
-    except (FileNotFoundError, ValueError) as error:
-        print(f"Error while projecting HOA/trace: {error}")
-        sys.exit(1)
+    generated_hoa = find_generated_hoa()
 
-    # Step 3: Run predictive_ltl with projected artifacts.
-    run_predictive_ltl(args.ltl, projected_hoa, projected_trace)
+    if offline_mode:
+        # Step 2 (offline): Project HOA AP names + trace events.
+        try:
+            projected_hoa, projected_trace = project_model_and_trace(
+                input_hoa_path=generated_hoa,
+                input_trace_path=args.trace,
+                output_hoa_path="automaton_projected.hoa",
+                output_trace_path="trace_projected.txt",
+                mapping_output_path="event_projection_map.json",
+                prefix="p",
+                strict_trace=True,
+            )
+        except (FileNotFoundError, ValueError) as error:
+            print(f"Error while projecting HOA/trace: {error}")
+            sys.exit(1)
+
+        # Step 3 (offline): run predictive_ltl with projected artifacts.
+        run_predictive_ltl(args.ltl, projected_hoa, projected_trace)
+    else:
+        # Step 2 (online): project HOA only and keep projection map for incoming events.
+        try:
+            projected_hoa, projection_map = project_hoa_file(
+                input_hoa_path=generated_hoa,
+                output_hoa_path="automaton_projected.hoa",
+                mapping_output_path="event_projection_map.json",
+                prefix="p",
+            )
+        except (FileNotFoundError, ValueError) as error:
+            print(f"Error while projecting HOA: {error}")
+            sys.exit(1)
+
+        # Step 3 (online): start websocket server and process events incrementally.
+        try:
+            asyncio.run(
+                run_predictive_ltl_online(
+                    args.ltl,
+                    projected_hoa,
+                    projection_map,
+                    args.host,
+                    args.port,
+                )
+            )
+        except KeyboardInterrupt:
+            print("Online predictive monitor stopped.")
 
 if __name__ == "__main__":
     main()

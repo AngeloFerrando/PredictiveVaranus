@@ -60,6 +60,52 @@ class PredictiveMonitor:
         self.__last_verdict = Verdict.uu
         return Verdict.uu
 
+
+def collect_aps(formula, model=None):
+    aps = set()
+
+    def get_aps(node):
+        if node.is_literal():
+            aps.add(node)
+        return False
+
+    spot.formula(formula).traverse(get_aps)
+    if model is not None:
+        aps.update(model.ap())
+    return sorted((ap for ap in aps if not str(ap).startswith('!')), key=lambda ap: str(ap))
+
+
+def encode_event(event_name, aps, system):
+    event = buddy.bddtrue
+    for ap in aps:
+        ap_name = str(ap)
+        variable = system.register_ap(ap_name)
+        if event_name == ap_name:
+            event = event & buddy.bdd_ithvar(variable)
+        else:
+            event = event & buddy.bdd_nithvar(variable)
+    return event
+
+
+def verdict_label(verdict):
+    if verdict == Verdict.tt:
+        return 'true'
+    if verdict == Verdict.ff:
+        return 'false'
+    return '?'
+
+
+class PredictiveRuntime:
+    def __init__(self, formula, model):
+        self.monitor = PredictiveMonitor(formula, model)
+        self.system = spot.formula(formula).translate()
+        self.aps = collect_aps(formula, model=model)
+
+    def step(self, event_name):
+        event = encode_event(event_name, self.aps, self.system)
+        return self.monitor.next((event_name, event))
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
         description='Python prototype of Predictive Runtime Verification for LTL',
@@ -77,25 +123,15 @@ def main(argv):
     args = parser.parse_args()
 
     start_time = time.time()
-    system = None
 
     if args.model:
         model = spot.automaton(args.model)
     else:
         model = spot.formula('true').translate()
 
-    monitor = PredictiveMonitor(args.formula, model)
+    runtime = PredictiveRuntime(args.formula, model)
 
     generation_time = time.time() - start_time
-    aps = set()
-    def get_aps(f):
-        if f.is_literal():
-            aps.add(f)
-        return False
-    spot.formula(args.formula).traverse(get_aps)
-    if args.model:
-        aps.update(model.ap())
-    system = spot.formula(args.formula).translate()
     i = 0
     start_time = time.time()
     with open(args.trace) as fp:
@@ -103,29 +139,17 @@ def main(argv):
        ev = ev.replace('\n', '')
        while ev:
            i = i+1
-           event = buddy.bddtrue
-           for ap in aps:
-               if str(ap).startswith('!'): continue
-               if ev == str(ap):
-                   a = system.register_ap(str(ap))
-                   bdda = buddy.bdd_ithvar(a)
-                   event = event & bdda
-               else:
-                   a = system.register_ap(str(ap))
-                   nbdda = buddy.bdd_nithvar(a)
-                   event = event & nbdda
-           res = monitor.next((ev, event))
+           res = runtime.step(ev)
            if res == Verdict.tt:
-               res = 'TRUE'
+               res = verdict_label(res)
                break
            if res == Verdict.ff:
-               res = 'FALSE'
+               res = verdict_label(res)
                break
-           res = '?'
+           res = verdict_label(res)
            ev = fp.readline().replace('\n', '')
        verification_time = time.time() - start_time
        print('RES: ' + str(res) + ';' + str(generation_time) + ';' + str(verification_time))
 
 if __name__ == '__main__':
     main(sys.argv)
-
