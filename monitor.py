@@ -29,9 +29,9 @@ def find_generated_hoa():
     raise FileNotFoundError("No HOA file found after running Varanus.")
 
 
-def run_varanus(config_file):
+def run_varanus(config_file, varanus_script):
     """Run Varanus to generate a Büchi automaton HOA."""
-    command = ["python3", "varanus.py", "buchi-automaton", config_file]
+    command = ["python3", varanus_script, "buchi-automaton", config_file]
     try:
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
@@ -48,9 +48,9 @@ def run_predictive_ltl(ltl_formula, model_file, trace_file):
         sys.exit(1)
 
 
-def start_varanus_online(config_file):
+def start_varanus_online(config_file, varanus_script):
     """Start standalone Varanus in online mode."""
-    command = ["python3", "varanus.py", "online", config_file]
+    command = ["python3", varanus_script, "online", config_file]
     try:
         process = subprocess.Popen(command)
     except OSError as error:
@@ -213,6 +213,11 @@ def main():
     )
     parser.add_argument("--host", default="127.0.0.1", help="Websocket host for online mode.")
     parser.add_argument("--port", type=int, default=5088, help="Websocket port for online mode.")
+    parser.add_argument(
+        "--varanus-script",
+        default="varanus.py",
+        help="Path to varanus.py (if not in current working directory).",
+    )
     args = parser.parse_args()
 
     offline_mode = args.offline or not args.online
@@ -227,7 +232,7 @@ def main():
         )
 
     # Step 1: Run Varanus to generate a HOA automaton.
-    run_varanus(args.config)
+    run_varanus(args.config, args.varanus_script)
 
     generated_hoa = find_generated_hoa()
 
@@ -265,7 +270,7 @@ def main():
         # Step 3 (online): start websocket server and process events incrementally.
         varanus_online_process = None
         if args.validation:
-            varanus_online_process = start_varanus_online(args.config)
+            varanus_online_process = start_varanus_online(args.config, args.varanus_script)
             print(
                 "Standalone Varanus online monitor started "
                 f"(pid={varanus_online_process.pid}) on "
