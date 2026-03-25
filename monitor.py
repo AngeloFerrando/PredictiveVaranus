@@ -127,9 +127,17 @@ async def run_predictive_ltl_online(
     port,
     varanus_forward_url=None,
 ):
-    import spot
-    import websockets
-    from predictive_ltl import PredictiveRuntime, Verdict
+    try:
+        import spot
+        import websockets
+        from predictive_ltl import PredictiveRuntime, Verdict
+    except ModuleNotFoundError as error:
+        raise RuntimeError(
+            "Missing Python dependency for online mode. "
+            "Run monitor.py with a Python that has spot/buddy/websockets installed "
+            "(for example python3), and if needed keep Varanus on a different Python via "
+            "--varanus-python (for example python3.8)."
+        ) from error
 
     projected_symbols = set(projection_map.values())
 
