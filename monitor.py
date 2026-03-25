@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -80,6 +81,15 @@ def normalize_ws_message(message):
 
 def is_websocket_closed_error(error):
     return error.__class__.__name__.startswith("ConnectionClosed")
+
+
+def project_ltl_formula(formula, projection_map):
+    projected_formula = str(formula)
+    # Longest keys first avoids partial replacements when AP names share prefixes.
+    for ap_name in sorted(projection_map.keys(), key=len, reverse=True):
+        pattern = r"(?<![A-Za-z0-9_])" + re.escape(ap_name) + r"(?![A-Za-z0-9_])"
+        projected_formula = re.sub(pattern, projection_map[ap_name], projected_formula)
+    return projected_formula
 
 
 def resolve_projected_event(parsed_event, projection_map, projected_symbols):
@@ -380,6 +390,10 @@ def main():
         print(f"Error while projecting HOA: {error}")
         sys.exit(1)
 
+    projected_ltl_formula = project_ltl_formula(args.ltl, projection_map)
+    log_pipeline("ltl formula input: {f}".format(f=args.ltl))
+    log_pipeline("ltl formula projected: {f}".format(f=projected_ltl_formula))
+
     # 2) Start Varanus online gate for both modes.
     varanus_process = start_varanus_online(args.config, args.varanus_script, args.varanus_python)
     print(
@@ -391,7 +405,7 @@ def main():
         if offline_mode:
             asyncio.run(
                 run_offline_pipeline(
-                    args.ltl,
+                    projected_ltl_formula,
                     projected_hoa,
                     projection_map,
                     args.trace,
@@ -402,7 +416,7 @@ def main():
         else:
             asyncio.run(
                 run_online_pipeline(
-                    args.ltl,
+                    projected_ltl_formula,
                     projected_hoa,
                     projection_map,
                     args.host,
