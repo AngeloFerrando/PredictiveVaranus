@@ -1,2 +1,0 @@
-RVMaster
--DCATKIN_DEVEL_PREFIX=/media/angelo/WorkData/git/devel -DCMAKE_INSTALL_PREFIX=/media/angelo/WorkData/git/install -G Unix Makefiles

@@ -1,8 +1,0 @@
-prefix=/media/angelo/WorkData/git/install
-
-Name: RVMaster
-Description: Description of RVMaster
-Version: 0.0.0
-Cflags: 
-Libs: -L/media/angelo/WorkData/git/install/lib 
-Requires: 
