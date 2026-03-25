@@ -62,6 +62,11 @@ def _replace_ap_tokens_in_formula(formula, replacement_map):
         # Use conservative boundaries to avoid touching larger identifiers.
         pattern = r"(?<![A-Za-z0-9_.])" + re.escape(source_ap) + r"(?![A-Za-z0-9_.])"
         updated = re.sub(pattern, replacement, updated)
+    # If labels are already partially projected (e.g., p26), normalize to indices.
+    updated = re.sub(r"(?<![A-Za-z0-9_.])p(\d+)(?![A-Za-z0-9_.])", r"\1", updated)
+    # Spot/HOA boolean constants are typically t/f.
+    updated = re.sub(r"(?<![A-Za-z0-9_.])true(?![A-Za-z0-9_.])", "t", updated, flags=re.IGNORECASE)
+    updated = re.sub(r"(?<![A-Za-z0-9_.])false(?![A-Za-z0-9_.])", "f", updated, flags=re.IGNORECASE)
     return updated
 
 

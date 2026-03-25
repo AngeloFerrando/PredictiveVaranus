@@ -15,6 +15,8 @@ DEFAULT_VARANUS_HOST = "127.0.0.1"
 DEFAULT_VARANUS_PORT = 5087
 SHOW_PIPELINE_LOGS = False
 GATEWAY_ID = "predictive-monitor"
+LABEL_BLOCK_PATTERN = re.compile(r"\[([^\]]*)\]")
+SPOT_ERROR_LINE_PATTERN = re.compile(r"([^:\n]+):(\d+)\.(\d+)-(\d+):")
 
 
 def log_pipeline(message):
@@ -87,6 +89,108 @@ def log_hoa_metadata(label, metadata, debug=False):
     )
     if debug:
         log_pipeline("{label} AP list: {aps}".format(label=label, aps=", ".join(metadata["aps"])))
+
+
+def _read_text_lines(path):
+    try:
+        with open(path, "r", encoding="utf-8") as source:
+            return source.read().splitlines()
+    except OSError:
+        return []
+
+
+def _extract_spot_error_line_numbers(error_text, hoa_path):
+    wanted_name = os.path.basename(hoa_path)
+    line_numbers = []
+    for match in SPOT_ERROR_LINE_PATTERN.finditer(str(error_text)):
+        ref_path = match.group(1)
+        if os.path.basename(ref_path) == wanted_name:
+            line_numbers.append(int(match.group(2)))
+    return sorted(set(line_numbers))
+
+
+def _find_identifier_label_lines(lines, max_items=12):
+    """Find label lines that still include identifiers (helpful for Spot parse failures)."""
+    items = []
+    for idx, line in enumerate(lines, start=1):
+        label_match = LABEL_BLOCK_PATTERN.search(line)
+        if not label_match:
+            continue
+        formula = label_match.group(1)
+        # Ignore numeric-only formulas/operators; surface textual tokens.
+        identifier_tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_.]*", formula)
+        filtered = [tok for tok in identifier_tokens if tok.lower() not in {"t", "f", "true", "false"}]
+        if filtered:
+            items.append((idx, line.rstrip("\n"), filtered))
+            if len(items) >= max_items:
+                break
+    return items
+
+
+def print_hoa_parse_diagnostics(error, hoa_path):
+    print("[DIAG] Spot failed to parse projected HOA: {path}".format(path=os.path.abspath(hoa_path)), flush=True)
+    print("[DIAG] Spot error: {msg}".format(msg=str(error)), flush=True)
+
+    lines = _read_text_lines(hoa_path)
+    if not lines:
+        print("[DIAG] Could not read HOA file for context.", flush=True)
+        return
+
+    ap_line = next((line for line in lines if line.startswith("AP:")), None)
+    if ap_line is not None:
+        print("[DIAG] {line}".format(line=ap_line), flush=True)
+
+    line_numbers = _extract_spot_error_line_numbers(str(error), hoa_path)
+    if line_numbers:
+        print("[DIAG] Context around reported HOA lines:", flush=True)
+        seen = set()
+        for center in line_numbers:
+            for ln in range(max(1, center - 2), min(len(lines), center + 2) + 1):
+                if ln in seen:
+                    continue
+                seen.add(ln)
+                marker = ">>" if ln == center else "  "
+                print("[DIAG] {marker} {ln:6d}: {text}".format(
+                    marker=marker,
+                    ln=ln,
+                    text=lines[ln - 1],
+                ), flush=True)
+    else:
+        print("[DIAG] Spot error did not include parse line numbers.", flush=True)
+
+    suspect_labels = _find_identifier_label_lines(lines)
+    if suspect_labels:
+        print("[DIAG] Labels still containing identifiers (first {count}):".format(count=len(suspect_labels)), flush=True)
+        for ln, text, tokens in suspect_labels:
+            print("[DIAG]   line {ln}: tokens={tokens} :: {text}".format(
+                ln=ln,
+                tokens=",".join(tokens),
+                text=text,
+            ), flush=True)
+
+
+def preflight_predictive_runtime(projected_hoa_path, projected_ltl_formula, verbose=False):
+    spot, _, PredictiveRuntime, _ = import_predictive_runtime_dependencies()
+    try:
+        model = spot.automaton(projected_hoa_path)
+        PredictiveRuntime(projected_ltl_formula, model)
+        if verbose:
+            print(
+                "[DIAG] preflight ok: projected_hoa={hoa} formula='{formula}'".format(
+                    hoa=os.path.abspath(projected_hoa_path),
+                    formula=projected_ltl_formula,
+                ),
+                flush=True,
+            )
+    except SyntaxError as error:
+        print_hoa_parse_diagnostics(error, projected_hoa_path)
+        raise
+    except Exception as error:
+        print("[DIAG] Predictive runtime preflight failed: {etype}: {msg}".format(
+            etype=error.__class__.__name__,
+            msg=error,
+        ), flush=True)
+        raise
 
 
 def run_varanus_buchi(config_file, varanus_script, varanus_python, verbose_varanus=False):
@@ -465,9 +569,48 @@ async def run_online_pipeline(
     varanus_url = f"ws://{varanus_host}:{varanus_port}"
     active_clients = set()
     counters = {"events": 0}
+    runtime_init_error_reported = False
 
     async def handler(client_ws, path=None):
-        runtime = PredictiveRuntime(ltl_formula, spot.automaton(projected_hoa_path))
+        nonlocal runtime_init_error_reported
+
+        try:
+            runtime = PredictiveRuntime(ltl_formula, spot.automaton(projected_hoa_path))
+        except SyntaxError as error:
+            print("[CLIENT] runtime init failed due to HOA parse error", flush=True)
+            if not runtime_init_error_reported:
+                print_hoa_parse_diagnostics(error, projected_hoa_path)
+                runtime_init_error_reported = True
+            try:
+                await client_ws.send(json.dumps({
+                    "status": "error",
+                    "gateway_id": GATEWAY_ID,
+                    "error": "predictive_runtime_init_failed",
+                    "detail": str(error),
+                }))
+            except Exception:
+                pass
+            await client_ws.close()
+            return
+        except Exception as error:
+            print(
+                "[CLIENT] runtime init failed: {etype}: {msg}".format(
+                    etype=error.__class__.__name__,
+                    msg=error,
+                ),
+                flush=True,
+            )
+            try:
+                await client_ws.send(json.dumps({
+                    "status": "error",
+                    "gateway_id": GATEWAY_ID,
+                    "error": "predictive_runtime_init_failed",
+                    "detail": str(error),
+                }))
+            except Exception:
+                pass
+            await client_ws.close()
+            return
         remote_addr = getattr(client_ws, "remote_address", None)
         active_clients.add(str(remote_addr))
         log_pipeline("client connected: {addr}".format(addr=remote_addr))
@@ -649,7 +792,10 @@ def main():
     global SHOW_PIPELINE_LOGS
     global GATEWAY_ID
 
-    parser = argparse.ArgumentParser(description="Monitor script for Varanus-first predictive LTL.")
+    parser = argparse.ArgumentParser(
+        description="Monitor script for Varanus-first predictive LTL.",
+        allow_abbrev=False,
+    )
     parser.add_argument("config", help="Path to the Varanus config.yaml file.", type=str)
     parser.add_argument("ltl", help="LTL formula to verify.", type=str)
     parser.add_argument("trace", nargs="?", help="Path to trace file (offline mode).", type=str)
@@ -671,11 +817,20 @@ def main():
         help="Show full Varanus stdout/stderr on terminal (otherwise redirected to log/*.log).",
     )
     parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose diagnostics (implies --debug and --verbose-varanus).",
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="Print detailed diagnostics (HOA metadata, AP mapping, and predictive step reasons).",
     )
     args = parser.parse_args()
+    if args.verbose:
+        args.debug = True
+        args.verbose_varanus = True
+
     SHOW_PIPELINE_LOGS = bool(args.debug)
     GATEWAY_ID = "pm-{pid}-{ts}".format(pid=os.getpid(), ts=int(time.time()))
 
@@ -724,6 +879,36 @@ def main():
 
     log_pipeline("ltl formula input: {f}".format(f=args.ltl))
     log_pipeline("ltl formula projected: {f}".format(f=projected_ltl_formula))
+    if args.verbose:
+        print(
+            "[DIAG] startup: cwd={cwd} host={host}:{port} varanus_gate={vhost}:{vport} gateway_id={gid}".format(
+                cwd=os.getcwd(),
+                host=args.host,
+                port=args.port,
+                vhost=args.varanus_host,
+                vport=args.varanus_port,
+                gid=GATEWAY_ID,
+            ),
+            flush=True,
+        )
+        print(
+            "[DIAG] files: source_hoa={src} projected_hoa={dst} projection_map={mapf}".format(
+                src=os.path.abspath(generated_hoa),
+                dst=os.path.abspath(projected_hoa),
+                mapf=os.path.abspath("event_projection_map.json"),
+            ),
+            flush=True,
+        )
+
+    try:
+        preflight_predictive_runtime(
+            projected_hoa_path=projected_hoa,
+            projected_ltl_formula=projected_ltl_formula,
+            verbose=args.verbose,
+        )
+    except Exception:
+        print("Monitor stopped due to predictive runtime preflight failure.", flush=True)
+        sys.exit(1)
 
     # 2) Start Varanus online gate for both modes.
     varanus_process = start_varanus_online(
