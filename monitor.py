@@ -14,6 +14,7 @@ from hoa_projection import project_hoa_file
 DEFAULT_VARANUS_HOST = "127.0.0.1"
 DEFAULT_VARANUS_PORT = 5087
 SHOW_PIPELINE_LOGS = False
+GATEWAY_ID = "predictive-monitor"
 
 
 def log_pipeline(message):
@@ -508,6 +509,7 @@ async def run_online_pipeline(
                             )
                             response = with_legacy_top_level_fields({
                                 "status": "blocked",
+                                "gateway_id": GATEWAY_ID,
                                 "verdict": gate_reply.get("verdict", "false"),
                                 "ltl_verdict": "-",
                                 "decision_source": "varanus",
@@ -535,6 +537,7 @@ async def run_online_pipeline(
                             )
                             response = with_legacy_top_level_fields({
                                 "status": "blocked",
+                                "gateway_id": GATEWAY_ID,
                                 "verdict": gate_reply.get("verdict", "false"),
                                 "ltl_verdict": "-",
                                 "decision_source": "varanus",
@@ -590,6 +593,7 @@ async def run_online_pipeline(
 
                         response = with_legacy_top_level_fields({
                             "status": "ok",
+                            "gateway_id": GATEWAY_ID,
                             "verdict": final_verdict,
                             "decision_source": decision_source,
                             "varanus": gate_reply,
@@ -636,6 +640,7 @@ async def run_online_pipeline(
 
 def main():
     global SHOW_PIPELINE_LOGS
+    global GATEWAY_ID
 
     parser = argparse.ArgumentParser(description="Monitor script for Varanus-first predictive LTL.")
     parser.add_argument("config", help="Path to the Varanus config.yaml file.", type=str)
@@ -665,6 +670,7 @@ def main():
     )
     args = parser.parse_args()
     SHOW_PIPELINE_LOGS = bool(args.debug)
+    GATEWAY_ID = "pm-{pid}-{ts}".format(pid=os.getpid(), ts=int(time.time()))
 
     offline_mode = args.offline or not args.online
 
@@ -723,6 +729,7 @@ def main():
         "Standalone Varanus gate started "
         f"(pid={varanus_process.pid}) on ws://{args.varanus_host}:{args.varanus_port}"
     )
+    print("Gateway id: {gid}".format(gid=GATEWAY_ID))
 
     try:
         if offline_mode:
