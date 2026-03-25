@@ -1,96 +1,107 @@
 # PredictiveVaranus
 
-Varanus-first predictive runtime verification for LTL.
+Varanus-first predictive runtime verification for LTL over event streams.
 
-This repository runs Varanus as the primary conformance gate, then adds a predictive LTL layer on top of Varanus-approved events.
+This project combines:
 
-## What it does
+- a **Varanus conformance gate** (first decision layer), and
+- a **predictive LTL monitor** (second decision layer).
 
-- Builds a Büchi automaton from a Varanus CSP configuration.
-- Projects domain AP names (for example `mission_complete`) to compact proposition names (`p19`).
-- Projects the user LTL formula to the same AP space.
-- Runs Varanus online as the first decision source.
-- Runs predictive LTL only on events that Varanus accepts as `currently_true`.
-- Returns a merged verdict per event.
+The monitor only applies predictive reasoning to events that Varanus accepts as consistent.
+
+## Overview
+
+The pipeline performs:
+
+1. Build Büchi automaton from a Varanus CSP model.
+2. Project model AP names (domain labels) to compact proposition symbols (`p0`, `p1`, ...).
+3. Project the input LTL formula to the same AP space.
+4. Start Varanus in online mode (websocket gate).
+5. Evaluate incoming events through:
+   - Varanus verdict first,
+   - predictive LTL verdict second (when applicable).
+6. Return a merged verdict per event.
 
 ## Repository layout
 
-- `monitor.py`: Main entry point (offline + online pipeline).
-- `hoa_projection.py`: HOA/AP projection utilities.
-- `predictive_ltl.py`: Predictive monitor runtime and standalone CLI.
-- `gen_model.py`: Small Spot example (not required by pipeline).
+- `monitor.py`: main orchestrator (offline + online modes).
+- `hoa_projection.py`: HOA/AP projection and optional trace projection.
+- `predictive_ltl.py`: predictive monitor runtime and standalone CLI.
+- `gen_model.py`: minimal Spot example (auxiliary).
 
 ## Runtime architecture
 
-Producer/ROS node -> `monitor.py` websocket (`--host/--port`, default `127.0.0.1:5088`) -> forwards raw event to standalone Varanus gate (`--varanus-host/--varanus-port`, default `127.0.0.1:5087`) -> if accepted, applies predictive LTL step -> sends merged JSON response back to producer.
+Event producer -> `monitor.py` websocket -> Varanus gate -> predictive LTL runtime -> merged response to producer.
 
-Important: producers must connect to the predictive endpoint (`5088` by default), not directly to Varanus (`5087`), otherwise predictive verdicts are bypassed.
+Defaults:
+
+- Predictive endpoint: `ws://127.0.0.1:5088`
+- Varanus gate endpoint: `ws://127.0.0.1:5087`
+
+Important:
+
+- Producers must connect to the **predictive** endpoint (`5088` by default).
+- If a producer connects directly to Varanus (`5087`), predictive verdicts are bypassed.
 
 ## Requirements
 
 - Linux environment.
-- Python 3 for this repository (`monitor.py`, `hoa_projection.py`, `predictive_ltl.py`).
-- Python modules in the monitor interpreter: `spot`, `buddy`, `websockets`.
-- A Varanus checkout with `varanus.py` available.
+- Python 3 for this repository.
+- Python packages in the monitor interpreter:
+  - `spot`
+  - `buddy`
+  - `websockets`
+- A Varanus checkout containing `varanus.py`.
 - A Python executable for Varanus (`--varanus-python`).
 
-Varanus may require a different Python than the predictive monitor (for example legacy Varanus/FDR setups often need `python2.7`).
+Note: Varanus may require a different Python than `monitor.py` depending on your FDR/Varanus environment.
 
 ## Quick dependency check
-
-Run this in the Python used for `monitor.py`:
 
 ```bash
 python3 - <<'PY'
 import spot, buddy, websockets
-print('ok')
+print("ok")
 PY
 ```
 
-## Quick start: online mode
+## Usage
 
-From this repository:
+### Online mode
 
 ```bash
-python3 monitor.py \
-  ../varanus/inspection-rover-test/rover_model3.yaml \
-  "F mission_complete" \
+python3 monitor.py <config.yaml> "<ltl_formula>" \
   --online \
   --host 0.0.0.0 --port 5088 \
-  --varanus-script ../varanus/varanus-python/varanus.py \
-  --varanus-python /usr/bin/python2.7
+  --varanus-script <path/to/varanus.py> \
+  --varanus-python <python-for-varanus>
 ```
 
-You should see:
+Expected startup output:
 
-- `Standalone Varanus gate started ... on ws://127.0.0.1:5087`
-- `Online predictive monitor listening on ws://0.0.0.0:5088`
-- `[EVENT N] ...` lines as events arrive.
+- `Standalone Varanus gate started ...`
+- `Online predictive monitor listening on ...`
+- `Waiting for events. Each event will print as: [EVENT N] ...`
 
-### Verbose diagnostics
+### Offline mode
+
+Offline is default unless `--online` is passed.
 
 ```bash
-python3 monitor.py ... --online ... --verbose
+python3 monitor.py <config.yaml> "<ltl_formula>" <trace.txt> \
+  --varanus-script <path/to/varanus.py> \
+  --varanus-python <python-for-varanus>
 ```
 
-`--verbose` implies `--debug` and `--verbose-varanus`.
+Output ends with a `RES:` summary line.
 
-## Quick start: offline mode
+### Diagnostics
 
-Offline mode is the default if `--online` is not passed.
+- `--debug`: pipeline metadata and predictive-step reasons.
+- `--verbose-varanus`: show raw Varanus output in terminal.
+- `--verbose`: enables both `--debug` and `--verbose-varanus`.
 
-```bash
-python3 monitor.py \
-  ../varanus/inspection-rover-test/rover_model3.yaml \
-  "F mission_complete" \
-  /path/to/trace.txt \
-  --varanus-script ../varanus/varanus-python/varanus.py \
-  --varanus-python /usr/bin/python2.7
-```
-
-Output ends with a `RES:` line (TRUE/FALSE/? + source + timing).
-
-## Main CLI
+## CLI reference
 
 ```bash
 python3 monitor.py -h
@@ -99,36 +110,38 @@ python3 monitor.py -h
 Key options:
 
 - `--offline` / `--online`
-- `--host`, `--port` (predictive websocket)
+- `--host`, `--port`
 - `--varanus-script`, `--varanus-python`
 - `--varanus-host`, `--varanus-port`
-- `--verbose-varanus`, `--debug`, `--verbose`
+- `--debug`, `--verbose-varanus`, `--verbose`
 
-## Output files generated by monitor
+## Generated artifacts
 
-- `buchi_automaton.hoa` (or latest generated HOA from Varanus)
+During runs, monitor may generate:
+
+- `buchi_automaton.hoa` (or latest Varanus HOA)
 - `automaton_projected.hoa`
 - `event_projection_map.json`
 - `log/varanus_buchi.log`
 - `log/varanus_online.log`
 
-## Event-level terminal output
+## Event output format
 
-Per event, the monitor prints a compact summary like:
+Per event, monitor prints:
 
 ```text
-[EVENT 30] topic=/radiation_sensor_plugin/sensor_0 parsed=radiation_level.Orange value=134.0 varanus=currently_true ltl=? final=currently_true source=varanus reason=undecided
+[EVENT N] topic=<...> parsed=<...> ... varanus=<...> ltl=<true|false|?> final=<...> source=<varanus|ltl> reason=<...>
 ```
 
 Field meaning:
 
-- `varanus`: gate decision from Varanus (`currently_true`, `false`, ...)
-- `ltl`: predictive result (`true`, `false`, `?`)
-- `final`: merged verdict returned to client
-- `source`: `varanus` or `ltl`
-- `reason`: predictive step reason (or Varanus-side reason)
+- `varanus`: verdict from the conformance gate.
+- `ltl`: predictive LTL verdict.
+- `final`: merged verdict returned to the client.
+- `source`: which subsystem decided the final verdict.
+- `reason`: diagnostic reason from gating or predictive step.
 
-## JSON response contract (online)
+## Online response format
 
 Typical successful response:
 
@@ -138,15 +151,15 @@ Typical successful response:
   "gateway_id": "pm-...",
   "verdict": "currently_true",
   "decision_source": "varanus",
-  "varanus": {"verdict": "currently_true", "parsed_event": "radiation_level.Green", "...": "..."},
-  "projected_event": "p26",
+  "varanus": {"verdict": "currently_true", "parsed_event": "..."},
+  "projected_event": "pN",
   "predictive_verdict": "?",
   "ltl_verdict": "?",
   "predictive_reason": "undecided"
 }
 ```
 
-Blocked response (rejected by Varanus or missing parse):
+Blocked response:
 
 ```json
 {
@@ -159,7 +172,7 @@ Blocked response (rejected by Varanus or missing parse):
 
 ## Standalone tools
 
-### HOA projection utility
+### HOA projection
 
 ```bash
 python3 hoa_projection.py -h
@@ -168,11 +181,11 @@ python3 hoa_projection.py -h
 Example:
 
 ```bash
-python3 hoa_projection.py buchi_automaton.hoa \
-  --trace trace.txt \
-  --hoa-output automaton_projected.hoa \
-  --trace-output trace_projected.txt \
-  --map-output event_projection_map.json
+python3 hoa_projection.py <input.hoa> \
+  --trace <trace.txt> \
+  --hoa-output <projected.hoa> \
+  --trace-output <projected_trace.txt> \
+  --map-output <event_projection_map.json>
 ```
 
 ### Predictive LTL prototype
@@ -184,47 +197,37 @@ python3 predictive_ltl.py -h
 Example:
 
 ```bash
-python3 predictive_ltl.py "F p19" trace_projected.txt --model automaton_projected.hoa
+python3 predictive_ltl.py "<projected_ltl_formula>" <projected_trace.txt> --model <projected.hoa>
 ```
 
 ## Troubleshooting
 
-### No `[EVENT ...]` lines appear
+### No `[EVENT ...]` lines
 
-- Check producer is connected to predictive websocket (`--host/--port`, default `5088`).
-- If producer is connected directly to Varanus (`5087`), predictive monitor will not see events.
+- Check producer is connected to predictive endpoint (`--host/--port`).
+- Check `monitor.py` startup completed and Varanus gate is running.
 
 ### `missing_parsed_event`
 
-- Varanus reply did not include `parsed_event`.
-- Ensure your Varanus online monitor forwards parsed event fields in websocket responses.
+- Varanus reply does not include parsed event fields.
+- Ensure your Varanus websocket response includes parsed event metadata.
 
-### Spot parse error on `automaton_projected.hoa` (`unexpected identifier`)
+### Spot parse errors in projected HOA
 
-- Run with `--verbose` to print HOA diagnostics and offending lines.
-- Regenerate HOA/projection and verify AP label normalization in projected labels.
+- Run with `--verbose` for diagnostics around failing HOA lines.
+- Re-run projection and inspect `automaton_projected.hoa`.
 
-### `PyInit__fdr` / Varanus import mismatch
+### Varanus/FDR Python mismatch
 
-- Run Varanus with the Python version matching your FDR bindings via `--varanus-python`.
+- Use `--varanus-python` matching your Varanus/FDR environment.
 
-### Websocket `Broken pipe` / `Connection to remote host was lost`
+### Websocket disconnects (`Broken pipe`, connection closed)
 
-- Usually means the remote endpoint closed connection due startup/runtime error.
-- Check monitor terminal and `log/varanus_online.log`.
+- Usually means remote endpoint closed due startup/runtime failure.
+- Check terminal output and `log/varanus_online.log`.
 
-## Semantic note
+## Semantics note
 
-The exported Büchi can include terminal `[true]`/`[t]` completion loops after mission termination states. This is an omega-word completion artifact and can over-approximate post-termination behavior for some LTL formulas.
+Depending on model export, terminal completion may be encoded with permissive omega-tail transitions (`[true]` / `[t]`). This can over-approximate behavior after process termination for some formulas.
 
-If your use case is mission-scoped (finite run) semantics, add an explicit end-of-mission convention and evaluate properties over mission-bounded traces.
-
-## Typical integration command (ROS bridge style)
-
-```bash
-python3 monitor.py ../varanus/inspection-rover-test/rover_model3.yaml "F mission_complete" \
-  --online --host 0.0.0.0 --port 5088 \
-  --varanus-script ../varanus/varanus-python/varanus.py \
-  --varanus-python /usr/bin/python2.7
-```
-
+If you need mission/session-bounded semantics, use an explicit end-of-run convention and evaluate properties with bounded scope.
