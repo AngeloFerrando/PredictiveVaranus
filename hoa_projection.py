@@ -7,6 +7,7 @@ from pathlib import Path
 
 AP_LINE_PATTERN = re.compile(r"^AP:\s+(\d+)\s*(.*)$")
 QUOTED_AP_PATTERN = re.compile(r'"((?:[^"\\]|\\.)*)"')
+LABEL_BLOCK_PATTERN = re.compile(r"\[([^\]]*)\]")
 
 
 def _unescape_hoa_string(value):
@@ -53,6 +54,25 @@ def _sanitize_properties_line(line):
     return None, True
 
 
+def _replace_ap_tokens_in_formula(formula, projection):
+    updated = formula
+    # Replace longest names first to avoid partial-prefix substitutions.
+    for source_ap, projected_ap in sorted(projection.items(), key=lambda item: len(item[0]), reverse=True):
+        # AP names are rendered as identifiers in explicit-label HOA formulas.
+        # Use conservative boundaries to avoid touching larger identifiers.
+        pattern = r"(?<![A-Za-z0-9_.])" + re.escape(source_ap) + r"(?![A-Za-z0-9_.])"
+        updated = re.sub(pattern, projected_ap, updated)
+    return updated
+
+
+def _project_label_blocks_in_line(line, projection):
+    def _replace_block(match):
+        formula = match.group(1)
+        return "[" + _replace_ap_tokens_in_formula(formula, projection) + "]"
+
+    return LABEL_BLOCK_PATTERN.sub(_replace_block, line)
+
+
 def project_hoa_text(hoa_text, prefix="p"):
     lines = hoa_text.splitlines()
     ap_line_index = None
@@ -76,7 +96,8 @@ def project_hoa_text(hoa_text, prefix="p"):
         sanitized_line, drop_line = _sanitize_properties_line(line)
         if drop_line:
             continue
-        sanitized_lines.append(sanitized_line)
+        projected_line = _project_label_blocks_in_line(sanitized_line, projection)
+        sanitized_lines.append(projected_line)
 
     return "\n".join(sanitized_lines) + ("\n" if hoa_text.endswith("\n") else ""), projection, ap_names
 
