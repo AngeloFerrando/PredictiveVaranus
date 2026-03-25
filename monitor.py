@@ -35,6 +35,45 @@ def find_generated_hoa():
     raise FileNotFoundError("No HOA file found after running Varanus.")
 
 
+def parse_hoa_metadata(hoa_path):
+    metadata = {
+        "path": hoa_path,
+        "states": None,
+        "start": None,
+        "properties": None,
+        "aps": [],
+    }
+    with open(hoa_path, "r", encoding="utf-8") as source:
+        for line in source:
+            stripped = line.strip()
+            if stripped.startswith("States:"):
+                metadata["states"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("Start:"):
+                metadata["start"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("properties:"):
+                metadata["properties"] = stripped[len("properties:"):].strip()
+            elif stripped.startswith("AP:"):
+                metadata["aps"] = re.findall(r'"([^"]*)"', stripped)
+            elif stripped == "--BODY--":
+                break
+    return metadata
+
+
+def log_hoa_metadata(label, metadata, debug=False):
+    log_pipeline(
+        "{label}: path={path} states={states} start={start} ap_count={ap_count} properties='{props}'".format(
+            label=label,
+            path=metadata["path"],
+            states=metadata["states"],
+            start=metadata["start"],
+            ap_count=len(metadata["aps"]),
+            props=metadata["properties"],
+        )
+    )
+    if debug:
+        log_pipeline("{label} AP list: {aps}".format(label=label, aps=", ".join(metadata["aps"])))
+
+
 def run_varanus_buchi(config_file, varanus_script, varanus_python):
     """Run Varanus to generate a Buchi automaton HOA."""
     command = [varanus_python, varanus_script, "buchi-automaton", config_file]
@@ -173,6 +212,7 @@ async def run_offline_pipeline(
     trace_path,
     varanus_host,
     varanus_port,
+    debug=False,
 ):
     spot, websockets, PredictiveRuntime, Verdict = import_predictive_runtime_dependencies()
 
@@ -221,13 +261,37 @@ async def run_offline_pipeline(
                 )
 
                 predictive_verdict = runtime.step(projected_event)
+                step_info = runtime.get_last_step_info()
+                predictive_reason = step_info.get("reason", "unknown")
+                if debug:
+                    log_pipeline(
+                        "offline predictive detail: event='{event}' reason={reason} info={info}".format(
+                            event=projected_event,
+                            reason=predictive_reason,
+                            info=json.dumps(step_info, sort_keys=True),
+                        )
+                    )
                 if predictive_verdict == Verdict.tt:
                     elapsed = time.time() - start_time
-                    print(f"RES: TRUE;source=predictive;line={line_number};events={processed_events};time={elapsed}")
+                    print(
+                        "RES: TRUE;source=predictive;reason={reason};line={line};events={events};time={time}".format(
+                            reason=predictive_reason,
+                            line=line_number,
+                            events=processed_events,
+                            time=elapsed,
+                        )
+                    )
                     return
                 if predictive_verdict == Verdict.ff:
                     elapsed = time.time() - start_time
-                    print(f"RES: FALSE;source=predictive;line={line_number};events={processed_events};time={elapsed}")
+                    print(
+                        "RES: FALSE;source=predictive;reason={reason};line={line};events={events};time={time}".format(
+                            reason=predictive_reason,
+                            line=line_number,
+                            events=processed_events,
+                            time=elapsed,
+                        )
+                    )
                     return
     finally:
         await varanus_ws.close()
@@ -244,6 +308,7 @@ async def run_online_pipeline(
     port,
     varanus_host,
     varanus_port,
+    debug=False,
 ):
     spot, websockets, PredictiveRuntime, Verdict = import_predictive_runtime_dependencies()
     projected_symbols = set(projection_map.values())
@@ -311,6 +376,8 @@ async def run_online_pipeline(
                             projected_symbols,
                         )
                         predictive_verdict = runtime.step(projected_event)
+                        step_info = runtime.get_last_step_info()
+                        predictive_reason = step_info.get("reason", "unknown")
 
                         if predictive_verdict == Verdict.tt:
                             predictive_text = "true"
@@ -327,14 +394,21 @@ async def run_online_pipeline(
                             decision_source = "ltl"
 
                         log_pipeline(
-                            "decision source={source} verdict={verdict} parsed='{parsed}' projected='{projected}' predictive={predictive}".format(
+                            "decision source={source} verdict={verdict} parsed='{parsed}' projected='{projected}' predictive={predictive} reason={reason}".format(
                                 source=decision_source,
                                 verdict=final_verdict,
                                 parsed=parsed_event,
                                 projected=projected_event,
                                 predictive=predictive_text,
+                                reason=predictive_reason,
                             )
                         )
+                        if debug:
+                            log_pipeline(
+                                "online predictive detail: {info}".format(
+                                    info=json.dumps(step_info, sort_keys=True)
+                                )
+                            )
 
                         response = with_legacy_top_level_fields({
                             "status": "ok",
@@ -343,7 +417,10 @@ async def run_online_pipeline(
                             "varanus": gate_reply,
                             "projected_event": projected_event,
                             "predictive_verdict": predictive_text,
+                            "predictive_reason": predictive_reason,
                         }, gate_reply)
+                        if debug:
+                            response["predictive_debug"] = step_info
                         await client_ws.send(json.dumps(response))
                     except Exception as error:
                         if is_websocket_closed_error(error):
@@ -382,6 +459,11 @@ def main():
     parser.add_argument("--varanus-python", default="python3", help="Python executable for Varanus.")
     parser.add_argument("--varanus-host", default=DEFAULT_VARANUS_HOST, help="Varanus websocket host.")
     parser.add_argument("--varanus-port", type=int, default=DEFAULT_VARANUS_PORT, help="Varanus websocket port.")
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print detailed diagnostics (HOA metadata, AP mapping, and predictive step reasons).",
+    )
     args = parser.parse_args()
 
     offline_mode = args.offline or not args.online
@@ -395,6 +477,7 @@ def main():
     run_varanus_buchi(args.config, args.varanus_script, args.varanus_python)
 
     generated_hoa = find_generated_hoa()
+    generated_hoa_metadata = parse_hoa_metadata(generated_hoa)
     try:
         projected_hoa, projection_map = project_hoa_file(
             input_hoa_path=generated_hoa,
@@ -406,7 +489,21 @@ def main():
         print(f"Error while projecting HOA: {error}")
         sys.exit(1)
 
+    projected_hoa_metadata = parse_hoa_metadata(projected_hoa)
+
     projected_ltl_formula = project_ltl_formula(args.ltl, projection_map)
+    log_hoa_metadata("hoa source", generated_hoa_metadata, debug=args.debug)
+    log_hoa_metadata("hoa projected", projected_hoa_metadata, debug=args.debug)
+    log_pipeline(
+        "projection map: entries={count} file={path}".format(
+            count=len(projection_map),
+            path="event_projection_map.json",
+        )
+    )
+    if args.debug:
+        for source_ap, projected_ap in sorted(projection_map.items()):
+            log_pipeline("projection: {src} -> {dst}".format(src=source_ap, dst=projected_ap))
+
     log_pipeline("ltl formula input: {f}".format(f=args.ltl))
     log_pipeline("ltl formula projected: {f}".format(f=projected_ltl_formula))
 
@@ -427,6 +524,7 @@ def main():
                     args.trace,
                     args.varanus_host,
                     args.varanus_port,
+                    args.debug,
                 )
             )
         else:
@@ -439,6 +537,7 @@ def main():
                     args.port,
                     args.varanus_host,
                     args.varanus_port,
+                    args.debug,
                 )
             )
     except KeyboardInterrupt:

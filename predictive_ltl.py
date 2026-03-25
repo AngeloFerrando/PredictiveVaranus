@@ -28,6 +28,7 @@ class PredictiveMonitor:
         self.__last_verdict = Verdict.uu
         self.__phi_states = set([self.__product_phi.get_init_state_number()])
         self.__not_phi_states = set([self.__product_not_phi.get_init_state_number()])
+        self.__last_step_info = {}
 
     def __advance_states(self, automaton, current_states, event):
         next_states = set()
@@ -46,13 +47,36 @@ class PredictiveMonitor:
     def __language_empty_from(self, automaton, states):
         self.__set_initial_states(automaton, states)
         return automaton.is_empty()
+
+    def __compact_states(self, states, limit=8):
+        ordered = sorted(states)
+        if len(ordered) <= limit:
+            return ordered
+        return ordered[:limit] + ["...(+{n})".format(n=len(ordered) - limit)]
+
+    def _set_last_step_info(self, info):
+        self.__last_step_info = dict(info)
+
+    def get_last_step_info(self):
+        return dict(self.__last_step_info)
+
     def next(self, event_tuple):
         # pj_event = project([event_tuple[0]], self.__model)
         # if not pj_event:
         #     return self.__last_verdict
         event = event_tuple[1]
+        phi_before = set(self.__phi_states)
+        not_phi_before = set(self.__not_phi_states)
         next_phi_states = self.__advance_states(self.__product_phi, self.__phi_states, event)
         if not next_phi_states:
+            self._set_last_step_info({
+                "reason": "no_matching_transition_in_phi_product",
+                "phi_before_count": len(phi_before),
+                "phi_after_count": 0,
+                "not_phi_before_count": len(not_phi_before),
+                "event": event_tuple[0],
+                "phi_before_sample": self.__compact_states(phi_before),
+            })
             self.__last_verdict = Verdict.ff
             return Verdict.ff
 
@@ -62,6 +86,16 @@ class PredictiveMonitor:
             event,
         )
         if not next_not_phi_states:
+            self._set_last_step_info({
+                "reason": "no_matching_transition_in_not_phi_product",
+                "phi_before_count": len(phi_before),
+                "phi_after_count": len(next_phi_states),
+                "not_phi_before_count": len(not_phi_before),
+                "not_phi_after_count": 0,
+                "event": event_tuple[0],
+                "phi_after_sample": self.__compact_states(next_phi_states),
+                "not_phi_before_sample": self.__compact_states(not_phi_before),
+            })
             self.__last_verdict = Verdict.tt
             return Verdict.tt
 
@@ -69,11 +103,39 @@ class PredictiveMonitor:
         self.__not_phi_states = next_not_phi_states
 
         if self.__language_empty_from(self.__product_phi, self.__phi_states):
+            self._set_last_step_info({
+                "reason": "phi_language_empty_after_event",
+                "phi_before_count": len(phi_before),
+                "phi_after_count": len(self.__phi_states),
+                "not_phi_before_count": len(not_phi_before),
+                "not_phi_after_count": len(self.__not_phi_states),
+                "event": event_tuple[0],
+                "phi_after_sample": self.__compact_states(self.__phi_states),
+            })
             self.__last_verdict = Verdict.ff
             return Verdict.ff
         if self.__language_empty_from(self.__product_not_phi, self.__not_phi_states):
+            self._set_last_step_info({
+                "reason": "not_phi_language_empty_after_event",
+                "phi_before_count": len(phi_before),
+                "phi_after_count": len(self.__phi_states),
+                "not_phi_before_count": len(not_phi_before),
+                "not_phi_after_count": len(self.__not_phi_states),
+                "event": event_tuple[0],
+                "not_phi_after_sample": self.__compact_states(self.__not_phi_states),
+            })
             self.__last_verdict = Verdict.tt
             return Verdict.tt
+        self._set_last_step_info({
+            "reason": "undecided",
+            "phi_before_count": len(phi_before),
+            "phi_after_count": len(self.__phi_states),
+            "not_phi_before_count": len(not_phi_before),
+            "not_phi_after_count": len(self.__not_phi_states),
+            "event": event_tuple[0],
+            "phi_after_sample": self.__compact_states(self.__phi_states),
+            "not_phi_after_sample": self.__compact_states(self.__not_phi_states),
+        })
         self.__last_verdict = Verdict.uu
         return Verdict.uu
 
@@ -114,6 +176,10 @@ def verdict_label(verdict):
 
 class PredictiveRuntime:
     def __init__(self, formula, model):
+        # Treat the CSP model as a transition system: every infinite run is admissible.
+        # Otherwise, model acceptance constraints can incorrectly force early verdicts.
+        if not model.get_acceptance().is_t():
+            model.set_acceptance(0, spot.acc_code.t())
         self.monitor = PredictiveMonitor(formula, model)
         self.system = spot.formula(formula).translate()
         self.aps = collect_aps(formula, model=model)
@@ -121,6 +187,9 @@ class PredictiveRuntime:
     def step(self, event_name):
         event = encode_event(event_name, self.aps, self.system)
         return self.monitor.next((event_name, event))
+
+    def get_last_step_info(self):
+        return self.monitor.get_last_step_info()
 
 
 def main(argv):
