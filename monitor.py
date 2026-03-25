@@ -486,6 +486,13 @@ async def run_online_pipeline(
                     try:
                         event_index += 1
                         counters["events"] += 1
+                        print(
+                            "[EVENT {idx}] observed raw={raw}".format(
+                                idx=event_index,
+                                raw=shorten(raw_message, 260),
+                            ),
+                            flush=True,
+                        )
                         gate_reply = await gate_with_varanus(varanus_ws, raw_message)
                         gate_verdict = str(gate_reply.get("verdict", "")).lower()
                         overview = format_event_overview(raw_message, gate_reply)
