@@ -225,6 +225,7 @@ async def run_online_pipeline(
                             json.dumps(
                                 {
                                     "status": "blocked",
+                                    "verdict": gate_reply.get("verdict", "false"),
                                     "reason": "varanus_rejected_or_ignored",
                                     "varanus": gate_reply,
                                 }
@@ -238,6 +239,7 @@ async def run_online_pipeline(
                             json.dumps(
                                 {
                                     "status": "blocked",
+                                    "verdict": gate_reply.get("verdict", "false"),
                                     "reason": "missing_parsed_event",
                                     "varanus": gate_reply,
                                 }
@@ -259,10 +261,16 @@ async def run_online_pipeline(
                     else:
                         predictive_text = "?"
 
+                    if predictive_text == "?":
+                        final_verdict = "currently_true"
+                    else:
+                        final_verdict = predictive_text
+
                     await client_ws.send(
                         json.dumps(
                             {
                                 "status": "ok",
+                                "verdict": final_verdict,
                                 "varanus": gate_reply,
                                 "projected_event": projected_event,
                                 "predictive_verdict": predictive_text,
