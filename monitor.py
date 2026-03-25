@@ -1,15 +1,16 @@
-import os
-import sys
-import subprocess
 import argparse
 import asyncio
 import json
+import os
+import subprocess
+import sys
+import time
 
-from hoa_projection import project_model_and_trace, project_hoa_file
+from hoa_projection import project_hoa_file
 
 
-VARANUS_ONLINE_HOST = "127.0.0.1"
-VARANUS_ONLINE_PORT = 5087
+DEFAULT_VARANUS_HOST = "127.0.0.1"
+DEFAULT_VARANUS_PORT = 5087
 
 
 def find_generated_hoa():
@@ -29,26 +30,17 @@ def find_generated_hoa():
     raise FileNotFoundError("No HOA file found after running Varanus.")
 
 
-def run_varanus(config_file, varanus_script, varanus_python):
-    """Run Varanus to generate a Büchi automaton HOA."""
+def run_varanus_buchi(config_file, varanus_script, varanus_python):
+    """Run Varanus to generate a Buchi automaton HOA."""
     command = [varanus_python, varanus_script, "buchi-automaton", config_file]
     try:
         subprocess.run(command, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error while running varanus: {e}")
+    except subprocess.CalledProcessError as error:
+        print(f"Error while running varanus: {error}")
         print(
-            "Hint: if this is an FDR import error (PyInit__fdr), use "
-            "--varanus-python with the Python version that matches FDR (often python3.8)."
+            "Hint: if this is an FDR import error (PyInit__fdr), run Varanus with the "
+            "Python version matching FDR via --varanus-python (often python3.8)."
         )
-        sys.exit(1)
-
-def run_predictive_ltl(ltl_formula, model_file, trace_file):
-    """Run predictive_ltl with a projected model and projected trace."""
-    command = ["python3", "predictive_ltl.py", ltl_formula, trace_file, "--model", model_file]
-    try:
-        subprocess.run(command, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error while running predictive_ltl: {e}")
         sys.exit(1)
 
 
@@ -56,19 +48,15 @@ def start_varanus_online(config_file, varanus_script, varanus_python):
     """Start standalone Varanus in online mode."""
     command = [varanus_python, varanus_script, "online", config_file]
     try:
-        process = subprocess.Popen(command)
+        return subprocess.Popen(command)
     except OSError as error:
         print(f"Error while starting Varanus online monitor: {error}")
         sys.exit(1)
 
-    return process
-
 
 def stop_varanus_online(process):
-    """Terminate standalone Varanus online process."""
     if process is None:
         return
-
     if process.poll() is not None:
         return
 
@@ -80,242 +68,282 @@ def stop_varanus_online(process):
         process.wait(timeout=5)
 
 
-def parse_event_message(message):
+def normalize_ws_message(message):
     if isinstance(message, bytes):
-        message = message.decode("utf-8", errors="replace")
+        return message.decode("utf-8", errors="replace")
+    return str(message)
 
-    stripped = message.strip()
-    if not stripped:
-        return None
+
+def resolve_projected_event(parsed_event, projection_map, projected_symbols):
+    if parsed_event in projection_map:
+        return projection_map[parsed_event]
+    if parsed_event in projected_symbols:
+        return parsed_event
+    raise ValueError(
+        f"Transformed Varanus event '{parsed_event}' is not in projected HOA AP map."
+    )
+
+
+async def connect_varanus_ws(websockets, varanus_url, retries=20, delay_seconds=0.25):
+    last_error = None
+    for _ in range(retries):
+        try:
+            return await websockets.connect(varanus_url)
+        except Exception as error:  # pragma: no cover
+            last_error = error
+            await asyncio.sleep(delay_seconds)
+    raise RuntimeError(f"Could not connect to Varanus websocket at {varanus_url}: {last_error}")
+
+
+async def gate_with_varanus(varanus_ws, raw_message):
+    await varanus_ws.send(raw_message)
+    reply_message = normalize_ws_message(await varanus_ws.recv())
 
     try:
-        payload = json.loads(stripped)
+        payload = json.loads(reply_message)
+        if isinstance(payload, dict):
+            return payload
+        return {"verdict": "error", "raw_reply": payload}
     except json.JSONDecodeError:
-        return stripped
-
-    if isinstance(payload, str):
-        return payload
-
-    if isinstance(payload, dict):
-        for key in ("event", "name", "label"):
-            if key in payload and payload[key] is not None:
-                return str(payload[key])
-
-        if "channel" in payload:
-            channel = str(payload["channel"])
-            params = payload.get("params")
-            if params is None:
-                return channel
-            return f"{channel}.{params}"
-
-    return stripped
+        return {"verdict": "error", "raw_reply": reply_message}
 
 
-def project_online_event(raw_event, projection_map, projected_symbols):
-    if raw_event in projection_map:
-        return projection_map[raw_event]
-    if raw_event in projected_symbols:
-        return raw_event
-    raise ValueError(f"Event '{raw_event}' is not present in the projected HOA AP map.")
-
-
-async def run_predictive_ltl_online(
-    ltl_formula,
-    model_file,
-    projection_map,
-    host,
-    port,
-    varanus_forward_url=None,
-):
+def import_predictive_runtime_dependencies():
     try:
         import spot
         import websockets
         from predictive_ltl import PredictiveRuntime, Verdict
     except ModuleNotFoundError as error:
         raise RuntimeError(
-            "Missing Python dependency for online mode. "
-            "Run monitor.py with a Python that has spot/buddy/websockets installed "
-            "(for example python3), and if needed keep Varanus on a different Python via "
-            "--varanus-python (for example python3.8)."
+            "Missing Python dependency for monitor online/offline pipeline. "
+            "Run monitor.py with a Python that has spot/buddy/websockets installed."
         ) from error
 
+    return spot, websockets, PredictiveRuntime, Verdict
+
+
+async def run_offline_pipeline(
+    ltl_formula,
+    projected_hoa_path,
+    projection_map,
+    trace_path,
+    varanus_host,
+    varanus_port,
+):
+    spot, websockets, PredictiveRuntime, Verdict = import_predictive_runtime_dependencies()
+
+    runtime = PredictiveRuntime(ltl_formula, spot.automaton(projected_hoa_path))
     projected_symbols = set(projection_map.values())
+    varanus_url = f"ws://{varanus_host}:{varanus_port}"
 
-    async def handler(websocket, path=None):
-        runtime = PredictiveRuntime(ltl_formula, spot.automaton(model_file))
-        varanus_socket = None
+    start_time = time.time()
+    processed_events = 0
 
-        async def forward_to_varanus(raw_message):
-            nonlocal varanus_socket
-            if varanus_forward_url is None:
-                return None, None
-
-            try:
-                if varanus_socket is None or varanus_socket.closed:
-                    varanus_socket = await websockets.connect(varanus_forward_url)
-                await varanus_socket.send(raw_message)
-                reply = await varanus_socket.recv()
-                return reply, None
-            except Exception as error:
-                if varanus_socket is not None:
-                    try:
-                        await varanus_socket.close()
-                    except Exception:
-                        pass
-                varanus_socket = None
-                return None, str(error)
-
-        async for message in websocket:
-            try:
-                raw_event = parse_event_message(message)
-                if raw_event is None:
-                    await websocket.send(json.dumps({"status": "ignored", "reason": "empty message"}))
+    async with await connect_varanus_ws(websockets, varanus_url) as varanus_ws:
+        with open(trace_path, "r", encoding="utf-8") as source:
+            for line_number, raw_line in enumerate(source, start=1):
+                raw_event = raw_line.rstrip("\n")
+                if raw_event == "":
                     continue
 
-                projected_event = project_online_event(raw_event, projection_map, projected_symbols)
-                verdict = runtime.step(projected_event)
-                varanus_reply, varanus_error = await forward_to_varanus(message)
-                if verdict == Verdict.tt:
-                    verdict_text = "true"
-                elif verdict == Verdict.ff:
-                    verdict_text = "false"
-                else:
-                    verdict_text = "?"
-                response = {
-                    "status": "ok",
-                    "event": raw_event,
-                    "projected_event": projected_event,
-                    "verdict": verdict_text,
-                }
-                if varanus_forward_url is not None:
-                    response["varanus_forwarded"] = varanus_error is None
-                    if varanus_reply is not None:
-                        response["varanus_reply"] = varanus_reply
-                    if varanus_error is not None:
-                        response["varanus_error"] = varanus_error
-                await websocket.send(json.dumps(response))
-            except Exception as error:
-                await websocket.send(json.dumps({"status": "error", "error": str(error)}))
+                processed_events += 1
+                gate_reply = await gate_with_varanus(varanus_ws, raw_event)
+                gate_verdict = str(gate_reply.get("verdict", "")).lower()
 
-        if varanus_socket is not None:
-            try:
-                await varanus_socket.close()
-            except Exception:
-                pass
+                if gate_verdict == "false":
+                    elapsed = time.time() - start_time
+                    print(f"RES: FALSE;source=varanus;line={line_number};events={processed_events};time={elapsed}")
+                    return
+
+                if gate_verdict != "currently_true":
+                    continue
+
+                parsed_event = gate_reply.get("parsed_event")
+                if parsed_event is None:
+                    continue
+
+                projected_event = resolve_projected_event(
+                    parsed_event,
+                    projection_map,
+                    projected_symbols,
+                )
+
+                predictive_verdict = runtime.step(projected_event)
+                if predictive_verdict == Verdict.tt:
+                    elapsed = time.time() - start_time
+                    print(f"RES: TRUE;source=predictive;line={line_number};events={processed_events};time={elapsed}")
+                    return
+                if predictive_verdict == Verdict.ff:
+                    elapsed = time.time() - start_time
+                    print(f"RES: FALSE;source=predictive;line={line_number};events={processed_events};time={elapsed}")
+                    return
+
+    elapsed = time.time() - start_time
+    print(f"RES: ?;source=predictive;events={processed_events};time={elapsed}")
+
+
+async def run_online_pipeline(
+    ltl_formula,
+    projected_hoa_path,
+    projection_map,
+    host,
+    port,
+    varanus_host,
+    varanus_port,
+):
+    spot, websockets, PredictiveRuntime, Verdict = import_predictive_runtime_dependencies()
+    projected_symbols = set(projection_map.values())
+    varanus_url = f"ws://{varanus_host}:{varanus_port}"
+
+    async def handler(client_ws, path=None):
+        runtime = PredictiveRuntime(ltl_formula, spot.automaton(projected_hoa_path))
+
+        async with await connect_varanus_ws(websockets, varanus_url) as varanus_ws:
+            async for incoming in client_ws:
+                raw_message = normalize_ws_message(incoming)
+                if raw_message.strip() == "":
+                    await client_ws.send(json.dumps({"status": "ignored", "reason": "empty message"}))
+                    continue
+
+                try:
+                    gate_reply = await gate_with_varanus(varanus_ws, raw_message)
+                    gate_verdict = str(gate_reply.get("verdict", "")).lower()
+
+                    if gate_verdict != "currently_true":
+                        await client_ws.send(
+                            json.dumps(
+                                {
+                                    "status": "blocked",
+                                    "reason": "varanus_rejected_or_ignored",
+                                    "varanus": gate_reply,
+                                }
+                            )
+                        )
+                        continue
+
+                    parsed_event = gate_reply.get("parsed_event")
+                    if parsed_event is None:
+                        await client_ws.send(
+                            json.dumps(
+                                {
+                                    "status": "blocked",
+                                    "reason": "missing_parsed_event",
+                                    "varanus": gate_reply,
+                                }
+                            )
+                        )
+                        continue
+
+                    projected_event = resolve_projected_event(
+                        parsed_event,
+                        projection_map,
+                        projected_symbols,
+                    )
+                    predictive_verdict = runtime.step(projected_event)
+
+                    if predictive_verdict == Verdict.tt:
+                        predictive_text = "true"
+                    elif predictive_verdict == Verdict.ff:
+                        predictive_text = "false"
+                    else:
+                        predictive_text = "?"
+
+                    await client_ws.send(
+                        json.dumps(
+                            {
+                                "status": "ok",
+                                "varanus": gate_reply,
+                                "projected_event": projected_event,
+                                "predictive_verdict": predictive_text,
+                            }
+                        )
+                    )
+                except Exception as error:
+                    await client_ws.send(json.dumps({"status": "error", "error": str(error)}))
 
     print(f"Online predictive monitor listening on ws://{host}:{port}")
-    if varanus_forward_url is not None:
-        print(f"Forwarding events to standalone Varanus at {varanus_forward_url}")
+    print(f"Varanus gate expected at ws://{varanus_host}:{varanus_port}")
     async with websockets.serve(handler, host, port):
         await asyncio.Future()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Monitor script to run varanus and predictive_ltl.")
-    parser.add_argument("config", help="Path to the config.yaml file for varanus.", type=str)
+    parser = argparse.ArgumentParser(description="Monitor script for Varanus-first predictive LTL.")
+    parser.add_argument("config", help="Path to the Varanus config.yaml file.", type=str)
     parser.add_argument("ltl", help="LTL formula to verify.", type=str)
-    parser.add_argument("trace", nargs="?", help="Path to the trace file (offline mode only).", type=str)
+    parser.add_argument("trace", nargs="?", help="Path to trace file (offline mode).", type=str)
+
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument("--offline", action="store_true", help="Run offline monitoring with a trace file.")
-    mode_group.add_argument("--online", action="store_true", help="Run online monitoring via websocket.")
-    parser.add_argument(
-        "--validation",
-        action="store_true",
-        help="Online mode only: also run standalone Varanus online monitor in parallel.",
-    )
-    parser.add_argument("--host", default="127.0.0.1", help="Websocket host for online mode.")
-    parser.add_argument("--port", type=int, default=5088, help="Websocket port for online mode.")
-    parser.add_argument(
-        "--varanus-script",
-        default="varanus.py",
-        help="Path to varanus.py (if not in current working directory).",
-    )
-    parser.add_argument(
-        "--varanus-python",
-        default="python2",
-        help="Python executable used to run varanus.py (e.g. python3.8).",
-    )
+    mode_group.add_argument("--offline", action="store_true", help="Run offline mode with trace replay.")
+    mode_group.add_argument("--online", action="store_true", help="Run online websocket mode.")
+
+    parser.add_argument("--host", default="127.0.0.1", help="Predictive websocket host (online mode).")
+    parser.add_argument("--port", type=int, default=5088, help="Predictive websocket port (online mode).")
+
+    parser.add_argument("--varanus-script", default="varanus.py", help="Path to varanus.py.")
+    parser.add_argument("--varanus-python", default="python3", help="Python executable for Varanus.")
+    parser.add_argument("--varanus-host", default=DEFAULT_VARANUS_HOST, help="Varanus websocket host.")
+    parser.add_argument("--varanus-port", type=int, default=DEFAULT_VARANUS_PORT, help="Varanus websocket port.")
     args = parser.parse_args()
 
     offline_mode = args.offline or not args.online
+
     if offline_mode and not args.trace:
         parser.error("trace is required in offline mode.")
-    if args.validation and offline_mode:
-        parser.error("--validation can only be used with --online.")
-    if args.validation and args.port == VARANUS_ONLINE_PORT:
-        parser.error(
-            f"--validation requires --port different from {VARANUS_ONLINE_PORT} "
-            f"(reserved by standalone Varanus online monitor)."
-        )
+    if args.online and args.port == args.varanus_port and args.host == args.varanus_host:
+        parser.error("Predictive websocket host/port must differ from Varanus websocket host/port.")
 
-    # Step 1: Run Varanus to generate a HOA automaton.
-    run_varanus(args.config, args.varanus_script, args.varanus_python)
+    # 1) Build Varanus Buchi and project APs.
+    run_varanus_buchi(args.config, args.varanus_script, args.varanus_python)
 
     generated_hoa = find_generated_hoa()
+    try:
+        projected_hoa, projection_map = project_hoa_file(
+            input_hoa_path=generated_hoa,
+            output_hoa_path="automaton_projected.hoa",
+            mapping_output_path="event_projection_map.json",
+            prefix="p",
+        )
+    except (FileNotFoundError, ValueError) as error:
+        print(f"Error while projecting HOA: {error}")
+        sys.exit(1)
 
-    if offline_mode:
-        # Step 2 (offline): Project HOA AP names + trace events.
-        try:
-            projected_hoa, projected_trace = project_model_and_trace(
-                input_hoa_path=generated_hoa,
-                input_trace_path=args.trace,
-                output_hoa_path="automaton_projected.hoa",
-                output_trace_path="trace_projected.txt",
-                mapping_output_path="event_projection_map.json",
-                prefix="p",
-                strict_trace=True,
-            )
-        except (FileNotFoundError, ValueError) as error:
-            print(f"Error while projecting HOA/trace: {error}")
-            sys.exit(1)
+    # 2) Start Varanus online gate for both modes.
+    varanus_process = start_varanus_online(args.config, args.varanus_script, args.varanus_python)
+    print(
+        "Standalone Varanus gate started "
+        f"(pid={varanus_process.pid}) on ws://{args.varanus_host}:{args.varanus_port}"
+    )
 
-        # Step 3 (offline): run predictive_ltl with projected artifacts.
-        run_predictive_ltl(args.ltl, projected_hoa, projected_trace)
-    else:
-        # Step 2 (online): project HOA only and keep projection map for incoming events.
-        try:
-            projected_hoa, projection_map = project_hoa_file(
-                input_hoa_path=generated_hoa,
-                output_hoa_path="automaton_projected.hoa",
-                mapping_output_path="event_projection_map.json",
-                prefix="p",
-            )
-        except (FileNotFoundError, ValueError) as error:
-            print(f"Error while projecting HOA: {error}")
-            sys.exit(1)
-
-        # Step 3 (online): start websocket server and process events incrementally.
-        varanus_online_process = None
-        if args.validation:
-            varanus_online_process = start_varanus_online(
-                args.config,
-                args.varanus_script,
-                args.varanus_python,
-            )
-            print(
-                "Standalone Varanus online monitor started "
-                f"(pid={varanus_online_process.pid}) on "
-                f"ws://{VARANUS_ONLINE_HOST}:{VARANUS_ONLINE_PORT}"
-            )
-        try:
+    try:
+        if offline_mode:
             asyncio.run(
-                run_predictive_ltl_online(
+                run_offline_pipeline(
+                    args.ltl,
+                    projected_hoa,
+                    projection_map,
+                    args.trace,
+                    args.varanus_host,
+                    args.varanus_port,
+                )
+            )
+        else:
+            asyncio.run(
+                run_online_pipeline(
                     args.ltl,
                     projected_hoa,
                     projection_map,
                     args.host,
                     args.port,
-                    (
-                        f"ws://{VARANUS_ONLINE_HOST}:{VARANUS_ONLINE_PORT}"
-                        if args.validation
-                        else None
-                    ),
+                    args.varanus_host,
+                    args.varanus_port,
                 )
             )
-        except KeyboardInterrupt:
-            print("Online predictive monitor stopped.")
-        finally:
-            stop_varanus_online(varanus_online_process)
+    except KeyboardInterrupt:
+        print("Monitor stopped.")
+    finally:
+        stop_varanus_online(varanus_process)
+
 
 if __name__ == "__main__":
     main()
