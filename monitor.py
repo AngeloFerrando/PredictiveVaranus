@@ -29,13 +29,17 @@ def find_generated_hoa():
     raise FileNotFoundError("No HOA file found after running Varanus.")
 
 
-def run_varanus(config_file, varanus_script):
+def run_varanus(config_file, varanus_script, varanus_python):
     """Run Varanus to generate a Büchi automaton HOA."""
-    command = ["python3", varanus_script, "buchi-automaton", config_file]
+    command = [varanus_python, varanus_script, "buchi-automaton", config_file]
     try:
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error while running varanus: {e}")
+        print(
+            "Hint: if this is an FDR import error (PyInit__fdr), use "
+            "--varanus-python with the Python version that matches FDR (often python3.8)."
+        )
         sys.exit(1)
 
 def run_predictive_ltl(ltl_formula, model_file, trace_file):
@@ -48,9 +52,9 @@ def run_predictive_ltl(ltl_formula, model_file, trace_file):
         sys.exit(1)
 
 
-def start_varanus_online(config_file, varanus_script):
+def start_varanus_online(config_file, varanus_script, varanus_python):
     """Start standalone Varanus in online mode."""
-    command = ["python3", varanus_script, "online", config_file]
+    command = [varanus_python, varanus_script, "online", config_file]
     try:
         process = subprocess.Popen(command)
     except OSError as error:
@@ -218,6 +222,11 @@ def main():
         default="varanus.py",
         help="Path to varanus.py (if not in current working directory).",
     )
+    parser.add_argument(
+        "--varanus-python",
+        default="python2",
+        help="Python executable used to run varanus.py (e.g. python3.8).",
+    )
     args = parser.parse_args()
 
     offline_mode = args.offline or not args.online
@@ -232,7 +241,7 @@ def main():
         )
 
     # Step 1: Run Varanus to generate a HOA automaton.
-    run_varanus(args.config, args.varanus_script)
+    run_varanus(args.config, args.varanus_script, args.varanus_python)
 
     generated_hoa = find_generated_hoa()
 
@@ -270,7 +279,11 @@ def main():
         # Step 3 (online): start websocket server and process events incrementally.
         varanus_online_process = None
         if args.validation:
-            varanus_online_process = start_varanus_online(args.config, args.varanus_script)
+            varanus_online_process = start_varanus_online(
+                args.config,
+                args.varanus_script,
+                args.varanus_python,
+            )
             print(
                 "Standalone Varanus online monitor started "
                 f"(pid={varanus_online_process.pid}) on "
