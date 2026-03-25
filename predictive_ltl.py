@@ -29,6 +29,7 @@ class PredictiveMonitor:
         self.__phi_states = set([self.__product_phi.get_init_state_number()])
         self.__not_phi_states = set([self.__product_not_phi.get_init_state_number()])
         self.__last_step_info = {}
+        self.__model_ap_names = sorted(str(ap) for ap in model.ap())
 
     def __advance_states(self, automaton, current_states, event):
         next_states = set()
@@ -60,14 +61,23 @@ class PredictiveMonitor:
     def get_last_step_info(self):
         return dict(self.__last_step_info)
 
+    def __encode_event_for_automaton(self, automaton, event_name):
+        event_bdd = buddy.bddtrue
+        for ap_name in self.__model_ap_names:
+            variable = automaton.register_ap(ap_name)
+            if event_name == ap_name:
+                event_bdd = event_bdd & buddy.bdd_ithvar(variable)
+            else:
+                event_bdd = event_bdd & buddy.bdd_nithvar(variable)
+        return event_bdd
+
     def next(self, event_tuple):
-        # pj_event = project([event_tuple[0]], self.__model)
-        # if not pj_event:
-        #     return self.__last_verdict
-        event = event_tuple[1]
+        event_name = event_tuple[0]
+        event_phi = self.__encode_event_for_automaton(self.__product_phi, event_name)
+        event_not_phi = self.__encode_event_for_automaton(self.__product_not_phi, event_name)
         phi_before = set(self.__phi_states)
         not_phi_before = set(self.__not_phi_states)
-        next_phi_states = self.__advance_states(self.__product_phi, self.__phi_states, event)
+        next_phi_states = self.__advance_states(self.__product_phi, self.__phi_states, event_phi)
         if not next_phi_states:
             self._set_last_step_info({
                 "reason": "no_matching_transition_in_phi_product",
@@ -83,7 +93,7 @@ class PredictiveMonitor:
         next_not_phi_states = self.__advance_states(
             self.__product_not_phi,
             self.__not_phi_states,
-            event,
+            event_not_phi,
         )
         if not next_not_phi_states:
             self._set_last_step_info({
@@ -155,6 +165,7 @@ def collect_aps(formula, model=None):
 
 
 def encode_event(event_name, aps, system):
+    # Deprecated for predictive runtime path.
     event = buddy.bddtrue
     for ap in aps:
         ap_name = str(ap)
@@ -181,12 +192,9 @@ class PredictiveRuntime:
         if not model.get_acceptance().is_t():
             model.set_acceptance(0, spot.acc_code.t())
         self.monitor = PredictiveMonitor(formula, model)
-        self.system = spot.formula(formula).translate()
-        self.aps = collect_aps(formula, model=model)
 
     def step(self, event_name):
-        event = encode_event(event_name, self.aps, self.system)
-        return self.monitor.next((event_name, event))
+        return self.monitor.next((event_name, None))
 
     def get_last_step_info(self):
         return self.monitor.get_last_step_info()
