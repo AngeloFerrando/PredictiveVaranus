@@ -88,7 +88,14 @@ async def connect_varanus_ws(websockets, varanus_url, retries=20, delay_seconds=
     last_error = None
     for _ in range(retries):
         try:
-            return await websockets.connect(varanus_url)
+            try:
+                return await websockets.connect(
+                    varanus_url,
+                    compression=None,
+                    ping_interval=None,
+                )
+            except TypeError:
+                return await websockets.connect(varanus_url)
         except Exception as error:  # pragma: no cover
             last_error = error
             await asyncio.sleep(delay_seconds)
@@ -139,7 +146,8 @@ async def run_offline_pipeline(
     start_time = time.time()
     processed_events = 0
 
-    async with await connect_varanus_ws(websockets, varanus_url) as varanus_ws:
+    varanus_ws = await connect_varanus_ws(websockets, varanus_url)
+    try:
         with open(trace_path, "r", encoding="utf-8") as source:
             for line_number, raw_line in enumerate(source, start=1):
                 raw_event = raw_line.rstrip("\n")
@@ -177,6 +185,8 @@ async def run_offline_pipeline(
                     elapsed = time.time() - start_time
                     print(f"RES: FALSE;source=predictive;line={line_number};events={processed_events};time={elapsed}")
                     return
+    finally:
+        await varanus_ws.close()
 
     elapsed = time.time() - start_time
     print(f"RES: ?;source=predictive;events={processed_events};time={elapsed}")
@@ -198,7 +208,8 @@ async def run_online_pipeline(
     async def handler(client_ws, path=None):
         runtime = PredictiveRuntime(ltl_formula, spot.automaton(projected_hoa_path))
 
-        async with await connect_varanus_ws(websockets, varanus_url) as varanus_ws:
+        varanus_ws = await connect_varanus_ws(websockets, varanus_url)
+        try:
             async for incoming in client_ws:
                 raw_message = normalize_ws_message(incoming)
                 if raw_message.strip() == "":
@@ -260,6 +271,8 @@ async def run_online_pipeline(
                     )
                 except Exception as error:
                     await client_ws.send(json.dumps({"status": "error", "error": str(error)}))
+        finally:
+            await varanus_ws.close()
 
     print(f"Online predictive monitor listening on ws://{host}:{port}")
     print(f"Varanus gate expected at ws://{varanus_host}:{varanus_port}")
