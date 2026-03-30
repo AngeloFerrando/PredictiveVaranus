@@ -293,6 +293,26 @@ def resolve_projected_event(parsed_event, projection_map, projected_symbols):
     )
 
 
+def normalize_gate_verdict(verdict):
+    normalized = str(verdict).strip().lower()
+    if normalized in {"currently_true", "true"}:
+        return "currently_true"
+    if normalized in {"false", "currently_false"}:
+        return "false"
+    if normalized in {"ignored", "ignore"}:
+        return "ignored"
+    return normalized
+
+
+def extract_parsed_event(gate_reply):
+    parsed_event = gate_reply.get("parsed_event")
+    if parsed_event is None:
+        parsed_event = gate_reply.get("event")
+    if parsed_event in (None, ""):
+        return None
+    return parsed_event
+
+
 async def connect_varanus_ws(websockets, varanus_url, retries=20, delay_seconds=0.25):
     last_error = None
     for _ in range(retries):
@@ -427,6 +447,7 @@ async def run_offline_pipeline(
 
     start_time = time.time()
     processed_events = 0
+    warned_varanus_internal_predictive = False
 
     varanus_ws = await connect_varanus_ws(websockets, varanus_url)
     try:
@@ -438,7 +459,17 @@ async def run_offline_pipeline(
 
                 processed_events += 1
                 gate_reply = await gate_with_varanus(varanus_ws, raw_event)
-                gate_verdict = str(gate_reply.get("verdict", "")).lower()
+                if (not warned_varanus_internal_predictive) and isinstance(gate_reply, dict) and (
+                    "predictive_verdict" in gate_reply or "predictive_reason" in gate_reply
+                ):
+                    print(
+                        "[WARN] Varanus reply already contains predictive fields. "
+                        "This suggests Varanus internal predictive_ltl_ws_url is enabled. "
+                        "For this architecture, disable it and let PredictiveVaranus decide predictive verdicts.",
+                        flush=True,
+                    )
+                    warned_varanus_internal_predictive = True
+                gate_verdict = normalize_gate_verdict(gate_reply.get("verdict", ""))
                 overview = format_event_overview(raw_event, gate_reply)
                 if debug:
                     log_pipeline(
@@ -474,8 +505,15 @@ async def run_offline_pipeline(
                     )
                     continue
 
-                parsed_event = gate_reply.get("parsed_event")
+                parsed_event = extract_parsed_event(gate_reply)
                 if parsed_event is None:
+                    if debug:
+                        log_pipeline(
+                            "offline missing parsed event: keys={keys} reply={reply}".format(
+                                keys=sorted(gate_reply.keys()) if isinstance(gate_reply, dict) else type(gate_reply),
+                                reply=shorten(json.dumps(gate_reply, sort_keys=True) if isinstance(gate_reply, dict) else gate_reply, 420),
+                            )
+                        )
                     print_event_summary(
                         processed_events,
                         overview,
@@ -570,9 +608,11 @@ async def run_online_pipeline(
     active_clients = set()
     counters = {"events": 0}
     runtime_init_error_reported = False
+    warned_varanus_internal_predictive = False
 
     async def handler(client_ws, path=None):
         nonlocal runtime_init_error_reported
+        nonlocal warned_varanus_internal_predictive
 
         try:
             runtime = PredictiveRuntime(ltl_formula, spot.automaton(projected_hoa_path))
@@ -637,7 +677,17 @@ async def run_online_pipeline(
                             flush=True,
                         )
                         gate_reply = await gate_with_varanus(varanus_ws, raw_message)
-                        gate_verdict = str(gate_reply.get("verdict", "")).lower()
+                        if (not warned_varanus_internal_predictive) and isinstance(gate_reply, dict) and (
+                            "predictive_verdict" in gate_reply or "predictive_reason" in gate_reply
+                        ):
+                            print(
+                                "[WARN] Varanus reply already contains predictive fields. "
+                                "This suggests Varanus internal predictive_ltl_ws_url is enabled. "
+                                "For this architecture, disable it and let PredictiveVaranus decide predictive verdicts.",
+                                flush=True,
+                            )
+                            warned_varanus_internal_predictive = True
+                        gate_verdict = normalize_gate_verdict(gate_reply.get("verdict", ""))
                         overview = format_event_overview(raw_message, gate_reply)
                         if debug:
                             log_pipeline(
@@ -660,7 +710,7 @@ async def run_online_pipeline(
                             response = with_legacy_top_level_fields({
                                 "status": "blocked",
                                 "gateway_id": GATEWAY_ID,
-                                "verdict": gate_reply.get("verdict", "false"),
+                                "verdict": gate_verdict or str(gate_reply.get("verdict", "false")),
                                 "ltl_verdict": "-",
                                 "decision_source": "varanus",
                                 "reason": "varanus_rejected_or_ignored",
@@ -674,21 +724,28 @@ async def run_online_pipeline(
                             await client_ws.send(json.dumps(response))
                             continue
 
-                        parsed_event = gate_reply.get("parsed_event")
+                        parsed_event = extract_parsed_event(gate_reply)
                         if parsed_event is None:
+                            if debug:
+                                log_pipeline(
+                                    "online missing parsed event: keys={keys} reply={reply}".format(
+                                        keys=sorted(gate_reply.keys()) if isinstance(gate_reply, dict) else type(gate_reply),
+                                        reply=shorten(json.dumps(gate_reply, sort_keys=True) if isinstance(gate_reply, dict) else gate_reply, 420),
+                                    )
+                                )
                             print_event_summary(
                                 event_index,
                                 overview,
                                 gate_verdict,
                                 "-",
-                                gate_reply.get("verdict", "false"),
+                                gate_verdict or str(gate_reply.get("verdict", "false")),
                                 "varanus",
                                 reason="missing_parsed_event",
                             )
                             response = with_legacy_top_level_fields({
                                 "status": "blocked",
                                 "gateway_id": GATEWAY_ID,
-                                "verdict": gate_reply.get("verdict", "false"),
+                                "verdict": gate_verdict or str(gate_reply.get("verdict", "false")),
                                 "ltl_verdict": "-",
                                 "decision_source": "varanus",
                                 "reason": "missing_parsed_event",
