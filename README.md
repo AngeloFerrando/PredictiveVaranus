@@ -11,6 +11,14 @@ The monitor only applies predictive reasoning to events that Varanus accepts as 
 
 ## Overview
 
+<p align="center">
+  <img src="Diagram.png" alt="Predictive Varanus Architecture" width="700"/>
+</p>
+
+<p align="center">
+  <em>Figure: Predictive Varanus pipeline combining CSP conformance and predictive LTL monitoring.</em>
+</p>
+
 The pipeline performs:
 
 1. Build Büchi automaton from a Varanus CSP model.
