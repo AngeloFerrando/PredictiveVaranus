@@ -2,69 +2,57 @@
 
 Varanus-first predictive runtime verification for LTL over event streams.
 
-This project combines:
+This repository runs a two-layer decision pipeline:
 
-- a **Varanus conformance gate** (first decision layer), and
-- a **predictive LTL monitor** (second decision layer).
+1. **Varanus conformance gate** (CSP consistency check)
+2. **Predictive LTL monitor** (model-constrained 3-valued verdict)
 
-The monitor only applies predictive reasoning to events that Varanus accepts as consistent.
+Only events accepted by Varanus are evaluated by predictive LTL.
 
-## Overview
+## Core Libraries
+
+This project builds on:
+
+- **Varanus**: CSP-based runtime verification framework used as the conformance gate.  
+  https://github.com/autonomy-and-verification/varanus
+- **Spot**: automata and LTL toolkit used to build and run the predictive LTL monitor.  
+  https://spot.lre.epita.fr/
+
+## Architecture
 
 <p align="center">
-  <img src="Diagram.png" alt="Predictive Varanus Architecture" width="700"/>
+  <img src="docs/Diagram.png" alt="Predictive Varanus Architecture" width="700"/>
 </p>
 
-<p align="center">
-  <em>Figure: Predictive Varanus pipeline combining CSP conformance and predictive LTL monitoring.</em>
-</p>
+Runtime flow:
 
-The pipeline performs:
+`event producer -> monitor.py (ws) -> Varanus gate (ws) -> predictive LTL -> merged verdict`
 
-1. Build Büchi automaton from a Varanus CSP model.
-2. Project model AP names (domain labels) to compact proposition symbols (`p0`, `p1`, ...).
-3. Project the input LTL formula to the same AP space.
-4. Start Varanus in online mode (websocket gate).
-5. Evaluate incoming events through:
-   - Varanus verdict first,
-   - predictive LTL verdict second (when applicable).
-6. Return a merged verdict per event.
+Default websocket endpoints:
 
-## Repository layout
+- Predictive monitor: `ws://127.0.0.1:5088`
+- Varanus gate: `ws://127.0.0.1:5087`
 
-- `monitor.py`: main orchestrator (offline + online modes).
-- `hoa_projection.py`: HOA/AP projection and optional trace projection.
-- `predictive_ltl.py`: predictive monitor runtime and standalone CLI.
-- `gen_model.py`: minimal Spot example (auxiliary).
+Producers must connect to the predictive endpoint (`5088` by default), not directly to Varanus.
 
-## Runtime architecture
+## Repository Layout
 
-Event producer -> `monitor.py` websocket -> Varanus gate -> predictive LTL runtime -> merged response to producer.
-
-Defaults:
-
-- Predictive endpoint: `ws://127.0.0.1:5088`
-- Varanus gate endpoint: `ws://127.0.0.1:5087`
-
-Important:
-
-- Producers must connect to the **predictive** endpoint (`5088` by default).
-- If a producer connects directly to Varanus (`5087`), predictive verdicts are bypassed.
+- `monitor.py`: main orchestrator (offline and online)
+- `hoa_projection.py`: HOA/AP projection utilities
+- `predictive_ltl.py`: predictive LTL runtime core and standalone CLI
 
 ## Requirements
 
-- Linux environment.
-- Python 3 for this repository.
-- Python packages in the monitor interpreter:
+- Linux
+- Python 3 for this repository
+- Python packages:
   - `spot`
   - `buddy`
   - `websockets`
-- A Varanus checkout containing `varanus.py`.
-- A Python executable for Varanus (`--varanus-python`).
+- A Varanus checkout containing `varanus.py`
+- A Python executable compatible with your Varanus/FDR setup (`--varanus-python`)
 
-Note: Varanus may require a different Python than `monitor.py` depending on your FDR/Varanus environment.
-
-## Quick dependency check
+Quick import check:
 
 ```bash
 python3 - <<'PY'
@@ -75,7 +63,7 @@ PY
 
 ## Usage
 
-### Online mode
+### Online Mode
 
 ```bash
 python3 monitor.py <config.yaml> "<ltl_formula>" \
@@ -85,15 +73,16 @@ python3 monitor.py <config.yaml> "<ltl_formula>" \
   --varanus-python <python-for-varanus>
 ```
 
-Expected startup output:
+Expected startup lines:
 
 - `Standalone Varanus gate started ...`
+- `Gateway id: ...`
 - `Online predictive monitor listening on ...`
 - `Waiting for events. Each event will print as: [EVENT N] ...`
 
-### Offline mode
+### Offline Mode
 
-Offline is default unless `--online` is passed.
+Offline is default unless `--online` is provided.
 
 ```bash
 python3 monitor.py <config.yaml> "<ltl_formula>" <trace.txt> \
@@ -101,41 +90,43 @@ python3 monitor.py <config.yaml> "<ltl_formula>" <trace.txt> \
   --varanus-python <python-for-varanus>
 ```
 
-Output ends with a `RES:` summary line.
+Offline output ends with a `RES:` summary.
 
 ### Diagnostics
 
-- `--debug`: pipeline metadata and predictive-step reasons.
-- `--verbose-varanus`: show raw Varanus output in terminal.
-- `--verbose`: enables both `--debug` and `--verbose-varanus`.
+- `--debug`: pipeline metadata and per-step predictive reasons
+- `--verbose-varanus`: stream full Varanus output to terminal
+- `--verbose`: enables both `--debug` and `--verbose-varanus`
 
-## CLI reference
+CLI help:
 
 ```bash
 python3 monitor.py -h
 ```
 
-Key options:
+## Generated Artifacts
 
-- `--offline` / `--online`
-- `--host`, `--port`
-- `--varanus-script`, `--varanus-python`
-- `--varanus-host`, `--varanus-port`
-- `--debug`, `--verbose-varanus`, `--verbose`
+Each run regenerates:
 
-## Generated artifacts
-
-During runs, monitor may generate:
-
-- `buchi_automaton.hoa` (or latest Varanus HOA)
-- `automaton_projected.hoa`
+- source HOA from Varanus (typically `automaton.hoa` or `buchi_automaton.hoa`)
+- `automaton_projected.hoa` (AP-projected HOA)
 - `event_projection_map.json`
-- `log/varanus_buchi.log`
-- `log/varanus_online.log`
+- `log/varanus_buchi.log` and `log/varanus_online.log` (unless `--verbose-varanus`)
 
-## Event output format
+`event_projection_map.json` format:
 
-Per event, monitor prints:
+```json
+{
+  "ap_order": ["..."],
+  "projection_map": {
+    "domain_event": "pN"
+  }
+}
+```
+
+## Event and Verdict Output
+
+Per accepted event, console summary follows this shape:
 
 ```text
 [EVENT N] topic=<...> parsed=<...> ... varanus=<...> ltl=<true|false|?> final=<...> source=<varanus|ltl> reason=<...>
@@ -143,44 +134,80 @@ Per event, monitor prints:
 
 Field meaning:
 
-- `varanus`: verdict from the conformance gate.
-- `ltl`: predictive LTL verdict.
-- `final`: merged verdict returned to the client.
-- `source`: which subsystem decided the final verdict.
-- `reason`: diagnostic reason from gating or predictive step.
+- `varanus`: conformance verdict from gate
+- `ltl`: predictive verdict from LTL runtime
+- `final`: merged verdict returned to producer
+- `source`: subsystem that decided `final`
+- `reason`: diagnostic reason (`undecided`, `varanus_rejected_or_ignored`, etc.)
 
-## Online response format
+Typical online response payload includes:
 
-Typical successful response:
+- `verdict`
+- `decision_source`
+- nested `varanus` reply
+- `projected_event`
+- `predictive_verdict` / `ltl_verdict`
+- `predictive_reason`
 
-```json
-{
-  "status": "ok",
-  "gateway_id": "pm-...",
-  "verdict": "currently_true",
-  "decision_source": "varanus",
-  "varanus": {"verdict": "currently_true", "parsed_event": "..."},
-  "projected_event": "pN",
-  "predictive_verdict": "?",
-  "ltl_verdict": "?",
-  "predictive_reason": "undecided"
-}
-```
+## Current Semantics Notes
 
-Blocked response:
+### 1) Varanus remains the parser/conformance layer
 
-```json
-{
-  "status": "blocked",
-  "verdict": "false",
-  "decision_source": "varanus",
-  "reason": "varanus_rejected_or_ignored"
-}
-```
+PredictiveVaranus expects parsed events from Varanus (`parsed_event` and/or `event`) and applies predictive LTL on top.
 
-## Standalone tools
+### 2) Terminal stuttering proposition (`tick`)
 
-### HOA projection
+The model side now uses a dedicated AP `tick` for post-termination stuttering in exported Büchi automata:
+
+- normal visible transitions are encoded with `!tick`
+- terminal accepting stutter uses `tick`
+
+This avoids the older over-permissive `[true]` stutter behavior after termination.
+
+### 3) Formula-writing implication
+
+For finite-run intent on top of infinite-word LTL, users may guard formulas with `tick`, for example:
+
+- safety style: `G(!tick -> p)`
+- eventuality-before-end style: `F(!tick & p)`
+
+(If you keep plain LTL without guards, semantics are still infinite-word semantics.)
+
+## Troubleshooting
+
+### No `[EVENT ...]` lines
+
+- Ensure producer is connected to predictive endpoint (`--host/--port`)
+- Ensure predictive monitor startup completed
+- Ensure Varanus online gate is running on expected host/port
+
+### `missing_parsed_event`
+
+- Varanus websocket reply did not include parsed event fields
+- Check Varanus integration and mapping in its monitor callback
+
+### Spot parse failure on projected HOA
+
+- Run with `--verbose` to print line-level diagnostics
+- Inspect `automaton_projected.hoa` and the printed offending lines
+
+### Immediate unexpected LTL `false`
+
+- Verify you are using freshly generated `buchi_automaton.hoa` and `automaton_projected.hoa`
+- Confirm startup logs show the expected formula projection and AP list
+- Check whether the prefix already forced a model branch where the formula is impossible
+
+### ROS-side callback crash (`MonitorError` / `m_topic`)
+
+If using ROS bridge code, a crash like:
+
+- `AttributeError: 'MonitorError' object has no attribute 'm_topic'`
+
+is in the ROS package message-field handling, not in PredictiveVaranus core.
+
+## Standalone Tools
+
+### HOA projection utility
 
 ```bash
 python3 hoa_projection.py -h
@@ -196,7 +223,7 @@ python3 hoa_projection.py <input.hoa> \
   --map-output <event_projection_map.json>
 ```
 
-### Predictive LTL prototype
+### Predictive LTL prototype utility
 
 ```bash
 python3 predictive_ltl.py -h
@@ -205,37 +232,5 @@ python3 predictive_ltl.py -h
 Example:
 
 ```bash
-python3 predictive_ltl.py "<projected_ltl_formula>" <projected_trace.txt> --model <projected.hoa>
+python3 predictive_ltl.py "<projected_formula>" <projected_trace.txt> --model <projected.hoa>
 ```
-
-## Troubleshooting
-
-### No `[EVENT ...]` lines
-
-- Check producer is connected to predictive endpoint (`--host/--port`).
-- Check `monitor.py` startup completed and Varanus gate is running.
-
-### `missing_parsed_event`
-
-- Varanus reply does not include parsed event fields.
-- Ensure your Varanus websocket response includes parsed event metadata.
-
-### Spot parse errors in projected HOA
-
-- Run with `--verbose` for diagnostics around failing HOA lines.
-- Re-run projection and inspect `automaton_projected.hoa`.
-
-### Varanus/FDR Python mismatch
-
-- Use `--varanus-python` matching your Varanus/FDR environment.
-
-### Websocket disconnects (`Broken pipe`, connection closed)
-
-- Usually means remote endpoint closed due startup/runtime failure.
-- Check terminal output and `log/varanus_online.log`.
-
-## Semantics note
-
-Depending on model export, terminal completion may be encoded with permissive omega-tail transitions (`[true]` / `[t]`). This can over-approximate behavior after process termination for some formulas.
-
-If you need mission/session-bounded semantics, use an explicit end-of-run convention and evaluate properties with bounded scope.
