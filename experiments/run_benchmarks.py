@@ -46,12 +46,31 @@ from experiments.benchmark_lib import (
 
 
 RUNNER_MODULE = "experiments.run_benchmarks"
+ALL_SUITES = ("rover", "dense", "decision_tail")
 
 
 def parse_int_list(value):
     if value in (None, ""):
         return None
     return [int(item.strip()) for item in value.split(",") if item.strip()]
+
+
+def parse_suite_order(value):
+    if value in (None, ""):
+        return None
+    items = [item.strip() for item in value.split(",") if item.strip()]
+    unknown = [item for item in items if item not in ALL_SUITES]
+    if unknown:
+        raise argparse.ArgumentTypeError("Unsupported suite(s) in --suite-order: {items}".format(items=", ".join(unknown)))
+    duplicates = [item for item in items if items.count(item) > 1]
+    if duplicates:
+        raise argparse.ArgumentTypeError("Duplicate suite(s) in --suite-order: {items}".format(items=", ".join(sorted(set(duplicates)))))
+    missing = [item for item in ALL_SUITES if item not in items]
+    if missing:
+        raise argparse.ArgumentTypeError(
+            "--suite-order must mention every suite exactly once: {items}".format(items=", ".join(ALL_SUITES))
+        )
+    return items
 
 
 def build_manifest(args):
@@ -190,6 +209,12 @@ def populate_common_arguments(parser):
     parser.add_argument("--warmup-seeds", type=parse_int_list, default=list(DEFAULT_WARMUP_SEEDS))
     parser.add_argument("--measured-seeds", type=parse_int_list, default=list(DEFAULT_MEASURED_SEEDS))
     parser.add_argument("--decision-trace-seeds", type=parse_int_list, default=list(range(20)))
+    parser.add_argument(
+        "--suite-order",
+        type=parse_suite_order,
+        default=list(ALL_SUITES),
+        help="Execution order for run-all, e.g. decision_tail,rover,dense.",
+    )
     parser.add_argument(
         "--keep-worker-artifacts",
         action="store_true",
@@ -341,7 +366,7 @@ def configure_parser():
 
 def resolve_suite_ids(command):
     if command == "run-all":
-        return ["rover", "dense", "decision_tail"]
+        return list(ALL_SUITES)
     if command == "run-rover":
         return ["rover"]
     if command == "run-dense":
@@ -383,6 +408,8 @@ def main():
         return
 
     suite_ids = resolve_suite_ids(args.command)
+    if args.command == "run-all":
+        suite_ids = list(args.suite_order)
     for suite_id in suite_ids:
         execute_suite(args, manifest, suite_id)
     refresh_derived_outputs(args.results_dir, args, manifest, suite_ids)

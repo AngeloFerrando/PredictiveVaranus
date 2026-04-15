@@ -149,6 +149,15 @@ That command:
 - writes the paper-table CSVs
 - generates plots unless `--skip-plots` is set
 
+To fail fast on synthetic-benefit issues before spending time on the dense suite, reorder the suites:
+
+```bash
+python3 -m experiments.run_benchmarks run-all \
+  --suite-order decision_tail,rover,dense \
+  --varanus-script /path/to/varanus.py \
+  --varanus-python python3.8
+```
+
 ### 5. Run a Single Internal Suite
 
 Rover only:
