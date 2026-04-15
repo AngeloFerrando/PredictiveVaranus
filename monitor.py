@@ -210,6 +210,12 @@ def run_varanus_buchi(config_file, varanus_script, varanus_python, verbose_varan
                     stderr=subprocess.STDOUT,
                 )
             log_pipeline("varanus buchi log: {path}".format(path=log_path))
+    except FileNotFoundError as error:
+        print(
+            "Error while running Varanus: could not execute '{cmd}'. "
+            "Check --varanus-python and --varanus-script.".format(cmd=error.filename)
+        )
+        sys.exit(1)
     except subprocess.CalledProcessError as error:
         print(f"Error while running varanus: {error}")
         if not verbose_varanus:
@@ -242,6 +248,12 @@ def start_varanus_online(config_file, varanus_script, varanus_python, verbose_va
         process._varanus_log_path = log_path
         log_pipeline("varanus online log: {path}".format(path=log_path))
         return process
+    except FileNotFoundError as error:
+        print(
+            "Error while starting Varanus online monitor: could not execute '{cmd}'. "
+            "Check --varanus-python and --varanus-script.".format(cmd=error.filename)
+        )
+        sys.exit(1)
     except OSError as error:
         print(f"Error while starting Varanus online monitor: {error}")
         sys.exit(1)

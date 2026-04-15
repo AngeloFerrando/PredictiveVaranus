@@ -1,0 +1,42 @@
+datatype commit_type = ok | fail
+channel start
+channel choose : {0..3}.{0..1}
+channel commit : commit_type
+channel tail : {1..10}
+channel mission_complete
+channel mission_abort
+
+NODE(d) = if d < 3 then [] j : {0..1} @ choose.d.j -> NODE(d + 1) else LAST
+LAST = [] j : {0} @ choose.3.j -> COMMIT_OK [] j : {1} @ choose.3.j -> COMMIT_FAIL
+COMMIT_OK = commit.ok -> SUCC_TAIL_1
+COMMIT_FAIL = commit.fail -> FAIL_TAIL_1
+
+SUCC_TAIL_1 = tail.1 -> SUCC_TAIL_2
+SUCC_TAIL_2 = tail.2 -> SUCC_TAIL_3
+SUCC_TAIL_3 = tail.3 -> SUCC_TAIL_4
+SUCC_TAIL_4 = tail.4 -> SUCC_TAIL_5
+SUCC_TAIL_5 = tail.5 -> SUCC_TAIL_6
+SUCC_TAIL_6 = tail.6 -> SUCC_TAIL_7
+SUCC_TAIL_7 = tail.7 -> SUCC_TAIL_8
+SUCC_TAIL_8 = tail.8 -> SUCC_TAIL_9
+SUCC_TAIL_9 = tail.9 -> SUCC_TAIL_10
+SUCC_TAIL_10 = tail.10 -> SUCC_TAIL_11
+SUCC_TAIL_11 = mission_complete -> STOP
+
+FAIL_TAIL_1 = tail.1 -> FAIL_TAIL_2
+FAIL_TAIL_2 = tail.2 -> FAIL_TAIL_3
+FAIL_TAIL_3 = tail.3 -> FAIL_TAIL_4
+FAIL_TAIL_4 = tail.4 -> FAIL_TAIL_5
+FAIL_TAIL_5 = tail.5 -> FAIL_TAIL_6
+FAIL_TAIL_6 = tail.6 -> FAIL_TAIL_7
+FAIL_TAIL_7 = tail.7 -> FAIL_TAIL_8
+FAIL_TAIL_8 = tail.8 -> FAIL_TAIL_9
+FAIL_TAIL_9 = tail.9 -> FAIL_TAIL_10
+FAIL_TAIL_10 = tail.10 -> FAIL_TAIL_11
+FAIL_TAIL_11 = mission_abort -> STOP
+
+MAIN = start -> NODE(0)
+
+assert MAIN :[deadlock free]
+assert MAIN :[divergence free]
+assert MAIN :[deterministic]

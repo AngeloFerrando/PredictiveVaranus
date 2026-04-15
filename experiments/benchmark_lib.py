@@ -1718,13 +1718,27 @@ def run_worker_subprocess(spec, runner_module, python_executable):
     spec_path = tmp_dir / f"{spec['run_id']}.spec.json"
     spec["spec_path"] = str(spec_path)
     write_json(spec_path, spec)
-    completed = subprocess.run(
-        [python_executable, "-m", runner_module, "run-one", "--spec", str(spec_path)],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    command = [python_executable, "-m", runner_module, "run-one", "--spec", str(spec_path)]
+    stdout_path = spec.get("worker_stdout_path")
+    stderr_path = spec.get("worker_stderr_path")
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except subprocess.CalledProcessError as error:
+        if stdout_path:
+            write_text(stdout_path, error.stdout or "")
+        if stderr_path:
+            write_text(stderr_path, error.stderr or "")
+        raise
+    if stdout_path:
+        write_text(stdout_path, completed.stdout)
+    if stderr_path:
+        write_text(stderr_path, completed.stderr)
     if completed.stdout.strip():
         print(completed.stdout.strip())
     return completed
@@ -1737,7 +1751,7 @@ def collect_worker_outputs(spec):
 
 
 def cleanup_worker_artifacts(spec):
-    for key in ("event_csv_path", "summary_json_path"):
+    for key in ("event_csv_path", "summary_json_path", "worker_stdout_path", "worker_stderr_path"):
         path = Path(spec[key])
         if path.exists():
             path.unlink()

@@ -70,6 +70,37 @@ def manifest_path(generated_dir):
     return Path(generated_dir) / "manifest.json"
 
 
+def resolve_executable(executable):
+    executable = str(executable)
+    if "/" in executable:
+        path = Path(executable).expanduser()
+        if path.exists():
+            return str(path.resolve())
+        return None
+    return shutil.which(executable)
+
+
+def validate_runtime_paths(args, parser):
+    resolved_varanus_python = resolve_executable(args.varanus_python)
+    if not resolved_varanus_python:
+        parser.error(
+            "The configured Varanus Python executable was not found: {value}. "
+            "Install it or pass a valid interpreter via --varanus-python.".format(value=args.varanus_python)
+        )
+    args.varanus_python = resolved_varanus_python
+
+    script_path = Path(args.varanus_script).expanduser()
+    if not script_path.is_absolute():
+        script_path = (Path.cwd() / script_path).resolve()
+    if not script_path.exists():
+        parser.error(
+            "The configured Varanus script was not found: {value}. "
+            "Pass the path to varanus.py via --varanus-script.".format(value=args.varanus_script)
+        )
+    args.varanus_script = str(script_path)
+    return args
+
+
 def load_or_prepare_manifest(args):
     path = manifest_path(args.generated_dir)
     if args.command == "prepare-inputs" or args.refresh_inputs or not path.exists():
@@ -125,6 +156,11 @@ def populate_common_arguments(parser):
     parser.add_argument("--warmup-seeds", type=parse_int_list, default=list(DEFAULT_WARMUP_SEEDS))
     parser.add_argument("--measured-seeds", type=parse_int_list, default=list(DEFAULT_MEASURED_SEEDS))
     parser.add_argument("--decision-trace-seeds", type=parse_int_list, default=list(range(20)))
+    parser.add_argument(
+        "--keep-worker-artifacts",
+        action="store_true",
+        help="Keep per-run spec, scratch directory, and worker stdout/stderr files under results/.tmp.",
+    )
     return parser
 
 
@@ -186,6 +222,8 @@ def execute_suite(args, manifest, suite_id):
         spec["scratch_dir"] = str(run_dir / "scratch")
         spec["event_csv_path"] = str(run_dir / "events.csv")
         spec["summary_json_path"] = str(run_dir / "summary.json")
+        spec["worker_stdout_path"] = str(run_dir / "worker.stdout.log")
+        spec["worker_stderr_path"] = str(run_dir / "worker.stderr.log")
         spec["varanus_script"] = str(Path(args.varanus_script).resolve())
         spec["varanus_python"] = args.varanus_python
         spec["varanus_host"] = args.varanus_host
@@ -200,12 +238,39 @@ def execute_suite(args, manifest, suite_id):
             run_worker_subprocess(spec, RUNNER_MODULE, sys.executable)
             event_rows, summary_row = collect_worker_outputs(spec)
         except Exception as error:
+            spec["_preserve_artifacts_on_failure"] = True
             stderr = getattr(error, "stderr", None)
+            stdout = getattr(error, "stdout", None)
+            if stdout:
+                print(stdout, file=sys.stderr, flush=True)
             if stderr:
                 print(stderr, file=sys.stderr, flush=True)
+            print(
+                "Worker artifacts preserved under {path}".format(path=run_dir.resolve()),
+                file=sys.stderr,
+                flush=True,
+            )
+            for key in ("spec_path", "worker_stdout_path", "worker_stderr_path", "scratch_dir"):
+                value = spec.get(key)
+                if value:
+                    print("{key}={value}".format(key=key, value=value), file=sys.stderr, flush=True)
+            spec_path = spec.get("spec_path")
+            if spec_path:
+                print(
+                    "rerun_command={python} -m {module} run-one --spec {spec}".format(
+                        python=sys.executable,
+                        module=RUNNER_MODULE,
+                        spec=spec_path,
+                    ),
+                    file=sys.stderr,
+                    flush=True,
+                )
             raise
         finally:
-            cleanup_worker_artifacts(spec)
+            if spec.get("_preserve_artifacts_on_failure") or args.keep_worker_artifacts:
+                pass
+            else:
+                cleanup_worker_artifacts(spec)
 
         if spec["warmup"]:
             continue
@@ -269,6 +334,8 @@ def main():
         summary_row = run_worker(spec)
         print(json.dumps({"run_id": summary_row["run_id"], "final_verdict": summary_row["final_verdict"]}), flush=True)
         return
+
+    args = validate_runtime_paths(args, parser)
 
     manifest = load_or_prepare_manifest(args)
 

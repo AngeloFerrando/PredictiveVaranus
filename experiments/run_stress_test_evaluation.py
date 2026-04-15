@@ -16,6 +16,7 @@ from experiments.benchmark_lib import (
 from experiments.run_benchmarks import (
     populate_common_arguments,
     run_selected_suites,
+    validate_runtime_paths,
     write_metadata,
 )
 
@@ -31,6 +32,7 @@ def configure_parser():
 def main():
     parser = configure_parser()
     args = parser.parse_args()
+    args = validate_runtime_paths(args, parser)
 
     manifest = run_selected_suites(args, ["dense", "decision_tail"])
 

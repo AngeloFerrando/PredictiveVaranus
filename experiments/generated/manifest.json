@@ -1,0 +1,476 @@
+{
+  "decision_tail": {
+    "models": {
+      "b2_d4_t1": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t1.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t1.csp",
+        "tail_length": 1
+      },
+      "b2_d4_t10": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t10.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t10.csp",
+        "tail_length": 10
+      },
+      "b2_d4_t20": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t20.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t20.csp",
+        "tail_length": 20
+      },
+      "b2_d4_t5": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t5.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d4_t5.csp",
+        "tail_length": 5
+      },
+      "b2_d6_t1": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t1.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t1.csp",
+        "tail_length": 1
+      },
+      "b2_d6_t10": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t10.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t10.csp",
+        "tail_length": 10
+      },
+      "b2_d6_t20": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t20.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t20.csp",
+        "tail_length": 20
+      },
+      "b2_d6_t5": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t5.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d6_t5.csp",
+        "tail_length": 5
+      },
+      "b2_d8_t1": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t1.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t1.csp",
+        "tail_length": 1
+      },
+      "b2_d8_t10": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t10.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t10.csp",
+        "tail_length": 10
+      },
+      "b2_d8_t20": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t20.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t20.csp",
+        "tail_length": 20
+      },
+      "b2_d8_t5": {
+        "branching_factor": 2,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t5.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b2_d8_t5.csp",
+        "tail_length": 5
+      },
+      "b4_d4_t1": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t1.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t1.csp",
+        "tail_length": 1
+      },
+      "b4_d4_t10": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t10.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t10.csp",
+        "tail_length": 10
+      },
+      "b4_d4_t20": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t20.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t20.csp",
+        "tail_length": 20
+      },
+      "b4_d4_t5": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t5.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d4_t5.csp",
+        "tail_length": 5
+      },
+      "b4_d6_t1": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t1.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t1.csp",
+        "tail_length": 1
+      },
+      "b4_d6_t10": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t10.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t10.csp",
+        "tail_length": 10
+      },
+      "b4_d6_t20": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t20.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t20.csp",
+        "tail_length": 20
+      },
+      "b4_d6_t5": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t5.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d6_t5.csp",
+        "tail_length": 5
+      },
+      "b4_d8_t1": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t1.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t1.csp",
+        "tail_length": 1
+      },
+      "b4_d8_t10": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t10.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t10.csp",
+        "tail_length": 10
+      },
+      "b4_d8_t20": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t20.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t20.csp",
+        "tail_length": 20
+      },
+      "b4_d8_t5": {
+        "branching_factor": 4,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t5.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t5.csp",
+        "tail_length": 5
+      },
+      "b8_d4_t1": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t1.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t1.csp",
+        "tail_length": 1
+      },
+      "b8_d4_t10": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t10.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t10.csp",
+        "tail_length": 10
+      },
+      "b8_d4_t20": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t20.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t20.csp",
+        "tail_length": 20
+      },
+      "b8_d4_t5": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t5.yaml",
+        "decision_depth": 4,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d4_t5.csp",
+        "tail_length": 5
+      },
+      "b8_d6_t1": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t1.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t1.csp",
+        "tail_length": 1
+      },
+      "b8_d6_t10": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t10.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t10.csp",
+        "tail_length": 10
+      },
+      "b8_d6_t20": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t20.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t20.csp",
+        "tail_length": 20
+      },
+      "b8_d6_t5": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t5.yaml",
+        "decision_depth": 6,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d6_t5.csp",
+        "tail_length": 5
+      },
+      "b8_d8_t1": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t1.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t1.csp",
+        "tail_length": 1
+      },
+      "b8_d8_t10": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t10.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t10.csp",
+        "tail_length": 10
+      },
+      "b8_d8_t20": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t20.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t20.csp",
+        "tail_length": 20
+      },
+      "b8_d8_t5": {
+        "branching_factor": 8,
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t5.yaml",
+        "decision_depth": 8,
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b8_d8_t5.csp",
+        "tail_length": 5
+      }
+    }
+  },
+  "dense": {
+    "models": {
+      "10": {
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n10.yaml",
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n10.csp",
+        "model_size_n": 10
+      },
+      "100": {
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n100.yaml",
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n100.csp",
+        "model_size_n": 100
+      },
+      "1000": {
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n1000.yaml",
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n1000.csp",
+        "model_size_n": 1000
+      },
+      "200": {
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n200.yaml",
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n200.csp",
+        "model_size_n": 200
+      },
+      "50": {
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n50.yaml",
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n50.csp",
+        "model_size_n": 50
+      },
+      "500": {
+        "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n500.yaml",
+        "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n500.csp",
+        "model_size_n": 500
+      }
+    }
+  },
+  "generated_dir": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated",
+  "rover": {
+    "config_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/rover_benchmark.yaml",
+    "model_path": "/media/angelo/WorkData/git/PredictiveVaranus/rover_model3.csp",
+    "source_config_path": "/media/angelo/WorkData/git/PredictiveVaranus/rover_model3.yaml",
+    "traces": {
+      "rover_abort_after_1": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "radiation_level.Red",
+          "move.0",
+          "mission_abort"
+        ],
+        "trace_class": "hazard_abort_red",
+        "trace_id": "rover_abort_after_1",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_abort_after_1.trace"
+      },
+      "rover_abort_after_2": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "move.2",
+          "arrived_at.2",
+          "inspect.2",
+          "inspected.2",
+          "radiation_level.Red",
+          "move.0",
+          "mission_abort"
+        ],
+        "trace_class": "hazard_abort_red",
+        "trace_id": "rover_abort_after_2",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_abort_after_2.trace"
+      },
+      "rover_abort_after_3": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "move.2",
+          "arrived_at.2",
+          "inspect.2",
+          "inspected.2",
+          "move.3",
+          "arrived_at.3",
+          "inspect.3",
+          "inspected.3",
+          "radiation_level.Red",
+          "move.0",
+          "mission_abort"
+        ],
+        "trace_class": "hazard_abort_red",
+        "trace_id": "rover_abort_after_3",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_abort_after_3.trace"
+      },
+      "rover_abort_after_4": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "move.2",
+          "arrived_at.2",
+          "inspect.2",
+          "inspected.2",
+          "move.3",
+          "arrived_at.3",
+          "inspect.3",
+          "inspected.3",
+          "move.4",
+          "arrived_at.4",
+          "inspect.4",
+          "inspected.4",
+          "radiation_level.Red",
+          "move.0",
+          "mission_abort"
+        ],
+        "trace_class": "hazard_abort_red",
+        "trace_id": "rover_abort_after_4",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_abort_after_4.trace"
+      },
+      "rover_mismatched_move_invalid": {
+        "events": [
+          "move.3",
+          "arrived_at.3",
+          "inspect.3",
+          "move.5"
+        ],
+        "trace_class": "invalid_mismatched_move",
+        "trace_id": "rover_mismatched_move_invalid",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_mismatched_move_invalid.trace"
+      },
+      "rover_nominal_green": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "move.2",
+          "arrived_at.2",
+          "inspect.2",
+          "inspected.2",
+          "move.3",
+          "arrived_at.3",
+          "inspect.3",
+          "inspected.3",
+          "move.4",
+          "arrived_at.4",
+          "inspect.4",
+          "inspected.4",
+          "move.5",
+          "arrived_at.5",
+          "inspect.5",
+          "inspected.5",
+          "mission_complete"
+        ],
+        "trace_class": "nominal",
+        "trace_id": "rover_nominal_green",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_nominal_green.trace"
+      },
+      "rover_orange_abort": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "move.2",
+          "arrived_at.2",
+          "inspect.2",
+          "inspected.2",
+          "move.3",
+          "arrived_at.3",
+          "inspect.3",
+          "inspected.3",
+          "radiation_level.Orange",
+          "move.0",
+          "mission_abort"
+        ],
+        "trace_class": "hazard_abort_orange",
+        "trace_id": "rover_orange_abort",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_orange_abort.trace"
+      },
+      "rover_red_abort": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "move.2",
+          "arrived_at.2",
+          "inspect.2",
+          "inspected.2",
+          "radiation_level.Red",
+          "move.0",
+          "mission_abort"
+        ],
+        "trace_class": "hazard_abort_red",
+        "trace_id": "rover_red_abort",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_red_abort.trace"
+      },
+      "rover_red_continue_invalid": {
+        "events": [
+          "move.1",
+          "arrived_at.1",
+          "inspect.1",
+          "inspected.1",
+          "move.2",
+          "arrived_at.2",
+          "inspect.2",
+          "inspected.2",
+          "radiation_level.Red",
+          "move.3"
+        ],
+        "trace_class": "invalid_hazard_continue",
+        "trace_id": "rover_red_continue_invalid",
+        "trace_path": "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/rover/traces/rover_red_continue_invalid.trace"
+      }
+    }
+  }
+}

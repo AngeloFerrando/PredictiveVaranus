@@ -8,7 +8,7 @@ if __package__ in (None, ""):
 
 
 from experiments.benchmark_lib import read_csv_rows, write_rover_publication_outputs
-from experiments.run_benchmarks import populate_common_arguments, run_selected_suites, write_metadata
+from experiments.run_benchmarks import populate_common_arguments, run_selected_suites, validate_runtime_paths, write_metadata
 
 
 def configure_parser():
@@ -22,6 +22,7 @@ def configure_parser():
 def main():
     parser = configure_parser()
     args = parser.parse_args()
+    args = validate_runtime_paths(args, parser)
 
     manifest = run_selected_suites(args, ["rover"])
 

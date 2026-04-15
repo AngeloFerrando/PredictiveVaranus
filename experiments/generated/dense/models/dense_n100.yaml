@@ -1,0 +1,8 @@
+---
+alphabet: [e]
+common_alphabet: [e]
+main_process: "MAIN"
+model: "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/dense/models/dense_n100.csp"
+trace_file: "log.json"
+name: "dense_n100"
+mode: "permissive"
