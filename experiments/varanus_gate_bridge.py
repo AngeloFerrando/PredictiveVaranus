@@ -87,7 +87,10 @@ def main():
         try:
             request = json.loads(line)
             event_name = str(request["event"])
+            log("bridge: received event " + event_name)
+            log("bridge: before transition " + event_name)
             resulting_state = monitor.process.transition(event_name)
+            log("bridge: after transition " + event_name)
             passed = monitor.check_result(event_name, resulting_state)
             payload = {
                 "event": event_name,
@@ -98,6 +101,7 @@ def main():
             else:
                 payload["verdict"] = "false"
             send_message(payload)
+            log("bridge: reply sent for " + event_name + " verdict=" + str(payload["verdict"]))
         except Exception as error:
             print("bridge_event_error: {0}".format(error), file=sys.stderr)
             traceback.print_exc(file=sys.stderr)

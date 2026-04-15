@@ -45,6 +45,7 @@ DEFAULT_WARMUP_SEEDS = [-2, -1]
 INCLUDE_PATTERN = re.compile(r'^\s*include\s+"([^"]+)"')
 BRIDGE_SCRIPT = REPO_ROOT / "experiments" / "varanus_gate_bridge.py"
 BRIDGE_READY_TIMEOUT_SECONDS = 30.0
+BRIDGE_EVENT_TIMEOUT_SECONDS = 20.0
 
 ROVER_PROPERTIES = [
     {
@@ -1122,7 +1123,20 @@ def gate_with_varanus_bridge(process, raw_event):
     request = json.dumps({"event": raw_event})
     process.stdin.write(request + "\n")
     process.stdin.flush()
+    deadline = time.time() + BRIDGE_EVENT_TIMEOUT_SECONDS
     while True:
+        if process.poll() is not None:
+            raise RuntimeError("Varanus gate bridge exited with code {code} while waiting for event reply.".format(code=process.returncode))
+        if time.time() >= deadline:
+            raise RuntimeError(
+                "Timed out waiting for Varanus gate bridge reply for event '{event}' after {secs:.1f}s.".format(
+                    event=raw_event,
+                    secs=BRIDGE_EVENT_TIMEOUT_SECONDS,
+                )
+            )
+        ready, _, _ = select([process.stdout], [], [], 0.25)
+        if not ready:
+            continue
         reply_line = process.stdout.readline()
         if reply_line == "":
             raise RuntimeError("Varanus gate bridge closed stdout unexpectedly.")
