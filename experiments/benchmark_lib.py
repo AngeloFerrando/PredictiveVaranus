@@ -1270,6 +1270,25 @@ def monitor_trace_with_bridge(spec, runtime, projection_map, trace_events, bridg
         last_final_verdict = final_verdict
         last_decision_source = decision_source
 
+        if spec.get("family") == "dense":
+            should_report = event_index <= 3 or (event_index % 1000 == 0)
+        else:
+            should_report = True
+        if should_report:
+            print(
+                "[worker] run_id={run_id} event={idx}/{total} raw={raw} gate={gate} pred={pred} final={final} source={source}".format(
+                    run_id=spec["run_id"],
+                    idx=event_index,
+                    total=len(trace_events),
+                    raw=raw_event,
+                    gate=gate_verdict,
+                    pred=predictive_text or "-",
+                    final=final_verdict,
+                    source=decision_source,
+                ),
+                flush=True,
+            )
+
         if first_conclusive is None and is_conclusive_verdict(final_verdict):
             first_conclusive = {
                 "index": event_index,
@@ -1308,10 +1327,12 @@ def run_worker(spec):
     try:
         os.chdir(scratch_dir)
         spot, _, PredictiveRuntime, _ = get_spot_runtime_dependencies()
+        print("[worker] run_id={run_id} preparing trace and automata".format(run_id=spec["run_id"]), flush=True)
 
         export_start = time.perf_counter_ns()
         run_varanus_buchi(spec["config_path"], spec["varanus_script"], spec["varanus_python"], verbose_varanus=False)
         export_end = time.perf_counter_ns()
+        print("[worker] run_id={run_id} exported source HOA".format(run_id=spec["run_id"]), flush=True)
 
         source_hoa = Path(find_generated_hoa()).resolve()
         source_metadata = parse_hoa_metadata(str(source_hoa))
@@ -1326,15 +1347,18 @@ def run_worker(spec):
             prefix="p",
         )
         project_end = time.perf_counter_ns()
+        print("[worker] run_id={run_id} projected HOA".format(run_id=spec["run_id"]), flush=True)
 
         formula_start = time.perf_counter_ns()
         projected_formula = project_ltl_formula(spec["formula"], projection_map)
         formula_end = time.perf_counter_ns()
+        print("[worker] run_id={run_id} projected formula".format(run_id=spec["run_id"]), flush=True)
 
         runtime_start = time.perf_counter_ns()
         projected_automaton = spot.automaton(projected_hoa_path)
         runtime = PredictiveRuntime(projected_formula, projected_automaton)
         runtime_end = time.perf_counter_ns()
+        print("[worker] run_id={run_id} predictive runtime initialized".format(run_id=spec["run_id"]), flush=True)
 
         projected_metadata = parse_hoa_metadata(projected_hoa_path)
         projected_transition_count = count_automaton_transitions(projected_automaton)
@@ -1343,6 +1367,7 @@ def run_worker(spec):
         varanus_process = start_varanus_gate_bridge(spec, scratch_dir)
         try:
             wait_for_varanus_gate_bridge_ready(varanus_process)
+            print("[worker] run_id={run_id} gate bridge ready".format(run_id=spec["run_id"]), flush=True)
             monitored = monitor_trace_with_bridge(
                 spec=spec,
                 runtime=runtime,
