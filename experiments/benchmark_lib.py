@@ -446,8 +446,10 @@ def dense_model_text(size):
     return textwrap.dedent(
         f"""\
         channel e : {{0..{max_index}}}
+        channel tag : {{0..{max_index}}}
 
         S(i) = [] j : {{0..{max_index}}} @ e.j -> S(j)
+             [] tag.i -> S(i)
 
         MAIN = S(0)
 
@@ -467,13 +469,12 @@ def leaf_id_from_path(path, branching_factor):
 
 def decision_tail_model_text(branching_factor, decision_depth, tail_length):
     max_branch = branching_factor - 1
-    max_depth = decision_depth - 1
-    even_choices = [str(choice) for choice in range(branching_factor) if choice % 2 == 0]
-    odd_choices = [str(choice) for choice in range(branching_factor) if choice % 2 == 1]
+    choose_depth = max(0, decision_depth)
+    max_depth = choose_depth - 1
     lines = [
         "datatype commit_type = ok | fail",
         "channel start",
-        f"channel choose : {{0..{max_depth}}}.{{0..{max_branch}}}",
+        f"channel choose : {{0..{max(max_depth, 0)}}}.{{0..{max_branch}}}",
         "channel commit : commit_type",
         f"channel tail : {{1..{tail_length}}}",
         "channel mission_complete",
@@ -481,16 +482,15 @@ def decision_tail_model_text(branching_factor, decision_depth, tail_length):
         "",
     ]
 
-    if decision_depth > 1:
+    if choose_depth > 1:
         lines.append(f"NODE(d) = if d < {max_depth} then [] j : {{0..{max_branch}}} @ choose.d.j -> NODE(d + 1) else LAST")
-    else:
+    elif choose_depth == 1:
         lines.append("NODE(d) = LAST")
-    last_branches = [f"choose.{max_depth}.{choice} -> COMMIT_OK" for choice in even_choices] + [
-        f"choose.{max_depth}.{choice} -> COMMIT_FAIL" for choice in odd_choices
-    ]
-    lines.append("LAST = " + " [] ".join(last_branches))
-    lines.append("COMMIT_OK = commit.ok -> SUCC_TAIL_1")
-    lines.append("COMMIT_FAIL = commit.fail -> FAIL_TAIL_1")
+    else:
+        lines.append("NODE(d) = COMMIT_POINT")
+    last_branches = [f"choose.{max_depth}.{choice} -> COMMIT_POINT" for choice in range(branching_factor)]
+    lines.append("LAST = " + " [] ".join(last_branches) if choose_depth > 0 else "LAST = COMMIT_POINT")
+    lines.append("COMMIT_POINT = commit.ok -> SUCC_TAIL_1 [] commit.fail -> FAIL_TAIL_1")
     lines.append("")
     for step in range(1, tail_length + 1):
         lines.append(f"SUCC_TAIL_{step} = tail.{step} -> SUCC_TAIL_{step + 1}")
@@ -561,8 +561,8 @@ def prepare_inputs(
         model_path = write_text(dense_model_dir / f"dense_n{size}.csp", dense_model_text(size))
         config_path = write_varanus_config(
             dense_model_dir / f"dense_n{size}.yaml",
-            alphabet=["e"],
-            common_alphabet=["e"],
+            alphabet=["e", "tag"],
+            common_alphabet=["e", "tag"],
             main_process="MAIN",
             model_path=model_path,
             name=f"dense_n{size}",
@@ -610,7 +610,8 @@ def generate_dense_trace(size, trace_length, seed):
 
 def generate_decision_tail_trace(branching_factor, decision_depth, tail_length, trace_seed):
     rng = random.Random(trace_seed)
-    path = [rng.randrange(branching_factor) for _ in range(decision_depth)]
+    choose_depth = max(0, decision_depth)
+    path = [rng.randrange(branching_factor) for _ in range(choose_depth)]
     leaf_id = leaf_id_from_path(path, branching_factor)
     success = (leaf_id % 2) == 0
     events = ["start"]
