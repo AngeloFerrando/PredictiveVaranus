@@ -1144,9 +1144,23 @@ def gate_with_varanus_bridge(process, raw_event):
 def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIMEOUT_SECONDS):
     deadline = time.time() + timeout_seconds
     stdout_handle = process.stdout
+    bridge_log_path = getattr(process, "_bridge_log_path", None)
+
+    def _bridge_log_says_ready():
+        if not bridge_log_path:
+            return False
+        try:
+            text = Path(bridge_log_path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return False
+        return "bridge: ready" in text
+
     while time.time() < deadline:
         if process.poll() is not None:
             raise RuntimeError("Varanus gate bridge exited with code {code} before becoming ready.".format(code=process.returncode))
+        if _bridge_log_says_ready():
+            process._bridge_ready = True
+            return
         remaining = max(0.0, deadline - time.time())
         ready, _, _ = select([stdout_handle], [], [], min(0.25, remaining))
         if not ready:
@@ -1166,6 +1180,9 @@ def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIM
             return
         if isinstance(payload, dict) and payload.get("verdict") in {"currently_true", "false", "ignored", "error"}:
             raise RuntimeError("Varanus gate bridge produced an event reply before startup completed: {payload}".format(payload=payload))
+    if process.poll() is None and _bridge_log_says_ready():
+        process._bridge_ready = True
+        return
     raise RuntimeError("Timed out waiting for Varanus gate bridge to become ready after {secs:.1f}s.".format(secs=timeout_seconds))
 
 
