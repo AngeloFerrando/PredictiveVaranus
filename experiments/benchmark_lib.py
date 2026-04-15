@@ -14,6 +14,7 @@ import sys
 import textwrap
 import time
 from pathlib import Path
+from select import select
 
 from monitor import (
     extract_parsed_event,
@@ -43,6 +44,7 @@ DEFAULT_DECISION_TRACE_SEEDS = list(range(20))
 DEFAULT_WARMUP_SEEDS = [-2, -1]
 INCLUDE_PATTERN = re.compile(r'^\s*include\s+"([^"]+)"')
 BRIDGE_SCRIPT = REPO_ROOT / "experiments" / "varanus_gate_bridge.py"
+BRIDGE_READY_TIMEOUT_SECONDS = 30.0
 
 ROVER_PROPERTIES = [
     {
@@ -1087,6 +1089,7 @@ def start_varanus_gate_bridge(spec, scratch_dir):
     )
     process._bridge_stderr_handle = stderr_handle
     process._bridge_log_path = str(stderr_path.resolve())
+    process._bridge_ready = False
     return process
 
 
@@ -1126,6 +1129,27 @@ def gate_with_varanus_bridge(process, raw_event):
     if isinstance(payload, dict):
         return payload
     return {"verdict": "error", "raw_reply": payload}
+
+
+def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIMEOUT_SECONDS):
+    deadline = time.time() + timeout_seconds
+    stdout_handle = process.stdout
+    while time.time() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError("Varanus gate bridge exited with code {code} before becoming ready.".format(code=process.returncode))
+        remaining = max(0.0, deadline - time.time())
+        ready, _, _ = select([stdout_handle], [], [], min(0.25, remaining))
+        if not ready:
+            continue
+        line = stdout_handle.readline()
+        if line == "":
+            continue
+        payload = json.loads(line)
+        if isinstance(payload, dict) and payload.get("status") == "ready":
+            process._bridge_ready = True
+            return
+        raise RuntimeError("Unexpected startup reply from Varanus gate bridge: {payload}".format(payload=payload))
+    raise RuntimeError("Timed out waiting for Varanus gate bridge to become ready after {secs:.1f}s.".format(secs=timeout_seconds))
 
 
 def monitor_trace_with_bridge(spec, runtime, projection_map, trace_events, bridge_process):
@@ -1284,6 +1308,7 @@ def run_worker(spec):
 
         varanus_process = start_varanus_gate_bridge(spec, scratch_dir)
         try:
+            wait_for_varanus_gate_bridge_ready(varanus_process)
             monitored = monitor_trace_with_bridge(
                 spec=spec,
                 runtime=runtime,

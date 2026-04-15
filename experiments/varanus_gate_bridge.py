@@ -12,6 +12,11 @@ import traceback
 import yaml
 
 
+def log(message):
+    sys.stderr.write(message + "\n")
+    sys.stderr.flush()
+
+
 def load_config(config_path):
     config_path = os.path.abspath(config_path)
     config_dir = os.path.dirname(config_path)
@@ -32,20 +37,25 @@ def load_config(config_path):
 
 
 def build_monitor(varanus_dir, config_info):
+    log("bridge: importing Varanus monitor modules from " + str(varanus_dir))
     sys.path.insert(0, varanus_dir)
     from monitor import Monitor  # pylint: disable=import-error
 
+    log("bridge: creating Monitor for model " + str(config_info["model_path"]))
     monitor = Monitor(
         config_info["model_path"],
         config_info["config_path"],
         config_info["event_map_path"],
         config_info["mode"],
     )
+    log("bridge: building CSP state machine for " + str(config_info["main_process"]))
     if config_info["common_alphabet"]:
         monitor.build_state_machine(config_info["main_process"], config_info["common_alphabet"])
     else:
         monitor.build_state_machine(config_info["main_process"])
+    log("bridge: starting state machine")
     monitor.process.start()
+    log("bridge: ready")
     return monitor
 
 
@@ -61,8 +71,10 @@ def main():
     args = parser.parse_args()
 
     try:
+        log("bridge: loading config " + str(args.config))
         config_info = load_config(args.config)
         monitor = build_monitor(os.path.abspath(args.varanus_dir), config_info)
+        send_message({"status": "ready"})
     except Exception as error:
         print("bridge_startup_error: {0}".format(error), file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
