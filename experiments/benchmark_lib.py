@@ -1122,13 +1122,23 @@ def gate_with_varanus_bridge(process, raw_event):
     request = json.dumps({"event": raw_event})
     process.stdin.write(request + "\n")
     process.stdin.flush()
-    reply_line = process.stdout.readline()
-    if reply_line == "":
-        raise RuntimeError("Varanus gate bridge closed stdout unexpectedly.")
-    payload = json.loads(reply_line)
-    if isinstance(payload, dict):
-        return payload
-    return {"verdict": "error", "raw_reply": payload}
+    while True:
+        reply_line = process.stdout.readline()
+        if reply_line == "":
+            raise RuntimeError("Varanus gate bridge closed stdout unexpectedly.")
+        stripped = reply_line.strip()
+        if not stripped:
+            continue
+        try:
+            payload = json.loads(stripped)
+        except ValueError:
+            continue
+        if isinstance(payload, dict):
+            if payload.get("status") == "ready":
+                process._bridge_ready = True
+                continue
+            return payload
+        return {"verdict": "error", "raw_reply": payload}
 
 
 def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIMEOUT_SECONDS):
@@ -1144,11 +1154,18 @@ def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIM
         line = stdout_handle.readline()
         if line == "":
             continue
-        payload = json.loads(line)
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            payload = json.loads(stripped)
+        except ValueError:
+            continue
         if isinstance(payload, dict) and payload.get("status") == "ready":
             process._bridge_ready = True
             return
-        raise RuntimeError("Unexpected startup reply from Varanus gate bridge: {payload}".format(payload=payload))
+        if isinstance(payload, dict) and payload.get("verdict") in {"currently_true", "false", "ignored", "error"}:
+            raise RuntimeError("Varanus gate bridge produced an event reply before startup completed: {payload}".format(payload=payload))
     raise RuntimeError("Timed out waiting for Varanus gate bridge to become ready after {secs:.1f}s.".format(secs=timeout_seconds))
 
 
