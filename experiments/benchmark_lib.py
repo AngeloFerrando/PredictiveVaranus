@@ -1993,27 +1993,58 @@ def run_worker_subprocess(spec, runner_module, python_executable):
     command = [python_executable, "-m", runner_module, "run-one", "--spec", str(spec_path)]
     stdout_path = spec.get("worker_stdout_path")
     stderr_path = spec.get("worker_stderr_path")
-    try:
-        completed = subprocess.run(
-            command,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    except subprocess.CalledProcessError as error:
-        if stdout_path:
-            write_text(stdout_path, error.stdout or "")
-        if stderr_path:
-            write_text(stderr_path, error.stderr or "")
-        raise
+    stdout_chunks = []
+    stderr_chunks = []
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+    )
+
+    streams = {}
+    if process.stdout is not None:
+        streams[process.stdout] = ("stdout", stdout_chunks)
+    if process.stderr is not None:
+        streams[process.stderr] = ("stderr", stderr_chunks)
+
+    while streams:
+        ready, _, _ = select(list(streams.keys()), [], [], 0.25)
+        if not ready:
+            if process.poll() is not None:
+                ready = list(streams.keys())
+            else:
+                continue
+        for stream in ready:
+            line = stream.readline()
+            if line == "":
+                streams.pop(stream, None)
+                continue
+            label, chunks = streams[stream]
+            chunks.append(line)
+            if label == "stdout":
+                sys.stdout.write(line)
+                sys.stdout.flush()
+            else:
+                sys.stderr.write(line)
+                sys.stderr.flush()
+
+    return_code = process.wait()
+    stdout_text = "".join(stdout_chunks)
+    stderr_text = "".join(stderr_chunks)
     if stdout_path:
-        write_text(stdout_path, completed.stdout)
+        write_text(stdout_path, stdout_text)
     if stderr_path:
-        write_text(stderr_path, completed.stderr)
-    if completed.stdout.strip():
-        print(completed.stdout.strip())
-    return completed
+        write_text(stderr_path, stderr_text)
+    if return_code != 0:
+        raise subprocess.CalledProcessError(
+            return_code,
+            command,
+            output=stdout_text,
+            stderr=stderr_text,
+        )
+    return subprocess.CompletedProcess(command, return_code, stdout_text, stderr_text)
 
 
 def collect_worker_outputs(spec):
