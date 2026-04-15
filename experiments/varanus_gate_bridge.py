@@ -8,13 +8,27 @@ import json
 import os
 import sys
 import traceback
+from contextlib import contextmanager
 
 import yaml
+
+
+PROTOCOL_STDOUT = sys.stdout
 
 
 def log(message):
     sys.stderr.write(message + "\n")
     sys.stderr.flush()
+
+
+@contextmanager
+def redirect_prints_to_stderr():
+    original_stdout = sys.stdout
+    sys.stdout = sys.stderr
+    try:
+        yield
+    finally:
+        sys.stdout = original_stdout
 
 
 def load_config(config_path):
@@ -38,30 +52,31 @@ def load_config(config_path):
 
 def build_monitor(varanus_dir, config_info):
     log("bridge: importing Varanus monitor modules from " + str(varanus_dir))
-    sys.path.insert(0, varanus_dir)
-    from monitor import Monitor  # pylint: disable=import-error
+    with redirect_prints_to_stderr():
+        sys.path.insert(0, varanus_dir)
+        from monitor import Monitor  # pylint: disable=import-error
 
-    log("bridge: creating Monitor for model " + str(config_info["model_path"]))
-    monitor = Monitor(
-        config_info["model_path"],
-        config_info["config_path"],
-        config_info["event_map_path"],
-        config_info["mode"],
-    )
-    log("bridge: building CSP state machine for " + str(config_info["main_process"]))
-    if config_info["common_alphabet"]:
-        monitor.build_state_machine(config_info["main_process"], config_info["common_alphabet"])
-    else:
-        monitor.build_state_machine(config_info["main_process"])
-    log("bridge: starting state machine")
-    monitor.process.start()
+        log("bridge: creating Monitor for model " + str(config_info["model_path"]))
+        monitor = Monitor(
+            config_info["model_path"],
+            config_info["config_path"],
+            config_info["event_map_path"],
+            config_info["mode"],
+        )
+        log("bridge: building CSP state machine for " + str(config_info["main_process"]))
+        if config_info["common_alphabet"]:
+            monitor.build_state_machine(config_info["main_process"], config_info["common_alphabet"])
+        else:
+            monitor.build_state_machine(config_info["main_process"])
+        log("bridge: starting state machine")
+        monitor.process.start()
     log("bridge: ready")
     return monitor
 
 
 def send_message(payload):
-    sys.stdout.write(json.dumps(payload) + "\n")
-    sys.stdout.flush()
+    PROTOCOL_STDOUT.write(json.dumps(payload) + "\n")
+    PROTOCOL_STDOUT.flush()
 
 
 def main():
@@ -88,10 +103,11 @@ def main():
             request = json.loads(line)
             event_name = str(request["event"])
             log("bridge: received event " + event_name)
-            log("bridge: before transition " + event_name)
-            resulting_state = monitor.process.transition(event_name)
-            log("bridge: after transition " + event_name)
-            passed = monitor.check_result(event_name, resulting_state)
+            with redirect_prints_to_stderr():
+                log("bridge: before transition " + event_name)
+                resulting_state = monitor.process.transition(event_name)
+                log("bridge: after transition " + event_name)
+                passed = monitor.check_result(event_name, resulting_state)
             payload = {
                 "event": event_name,
                 "parsed_event": event_name,
