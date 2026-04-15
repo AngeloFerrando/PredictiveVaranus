@@ -485,19 +485,10 @@ def decision_tail_model_text(branching_factor, decision_depth, tail_length):
         lines.append(f"NODE(d) = if d < {max_depth} then [] j : {{0..{max_branch}}} @ choose.d.j -> NODE(d + 1) else LAST")
     else:
         lines.append("NODE(d) = LAST")
-    lines.append(
-        "LAST = "
-        + "[] j : {"
-        + ",".join(even_choices)
-        + "} @ choose."
-        + str(max_depth)
-        + ".j -> COMMIT_OK"
-        + " [] j : {"
-        + ",".join(odd_choices)
-        + "} @ choose."
-        + str(max_depth)
-        + ".j -> COMMIT_FAIL"
-    )
+    last_branches = [f"choose.{max_depth}.{choice} -> COMMIT_OK" for choice in even_choices] + [
+        f"choose.{max_depth}.{choice} -> COMMIT_FAIL" for choice in odd_choices
+    ]
+    lines.append("LAST = " + " [] ".join(last_branches))
     lines.append("COMMIT_OK = commit.ok -> SUCC_TAIL_1")
     lines.append("COMMIT_FAIL = commit.fail -> FAIL_TAIL_1")
     lines.append("")
