@@ -1,0 +1,18 @@
+nametype waypointID = {0..5}
+nametype allInspectionPoints = diff(waypointID, {0})
+datatype radiation_category = Red | Orange | Green
+--nametype sensor_value = {0, 50, 120, 150, 250, 300}
+
+
+channel radiation_level : radiation_category
+channel inspect : waypointID
+channel move : waypointID
+channel arrived_at : waypointID
+channel inspected : waypointID
+
+channel mission_complete
+channel mission_abort
+channel mission_start
+
+input_channels = {|inspect, arrived_at, inspected|}
+outpu_channels = {|move, mission_start, mission_complete, mission_abort|}

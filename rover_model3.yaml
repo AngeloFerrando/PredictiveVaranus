@@ -1,0 +1,9 @@
+---
+alphabet: [inspect, inspected, arrived_at, radiation_level, mission_complete, mission_abort, mission_start, move]
+common_alphabet: [inspect, inspected, arrived_at, radiation_level, move,  mission_complete, mission_abort, mission_start]
+main_process: "ROVER_SYSTEM"
+model: "rover_model3.csp" 
+trace_file: "log.json" 
+#trace_file: "log3.json" #no mission_complete or mission_start
+name: "rover_model3_test"
+mode: "permissive"

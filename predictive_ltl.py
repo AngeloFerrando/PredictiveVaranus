@@ -31,6 +31,13 @@ class PredictiveMonitor:
         self.__last_step_info = {}
         self.__model_ap_names = sorted(str(ap) for ap in model.ap())
 
+    def __transition_count(self, automaton):
+        count = 0
+        for state in range(automaton.num_states()):
+            for _ in automaton.out(state):
+                count += 1
+        return count
+
     def __advance_states(self, automaton, current_states, event):
         next_states = set()
         for src in current_states:
@@ -60,6 +67,16 @@ class PredictiveMonitor:
 
     def get_last_step_info(self):
         return dict(self.__last_step_info)
+
+    def get_static_stats(self):
+        return {
+            "model_states": self.__model.num_states(),
+            "model_transitions": self.__transition_count(self.__model),
+            "product_phi_states": self.__product_phi.num_states(),
+            "product_phi_transitions": self.__transition_count(self.__product_phi),
+            "product_not_phi_states": self.__product_not_phi.num_states(),
+            "product_not_phi_transitions": self.__transition_count(self.__product_not_phi),
+        }
 
     def __encode_event_for_automaton(self, automaton, event_name):
         event_bdd = buddy.bddtrue
@@ -198,6 +215,9 @@ class PredictiveRuntime:
 
     def get_last_step_info(self):
         return self.monitor.get_last_step_info()
+
+    def get_static_stats(self):
+        return self.monitor.get_static_stats()
 
 
 def main(argv):

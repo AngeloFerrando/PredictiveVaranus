@@ -1,0 +1,98 @@
+-- Abstract inspection rover
+
+--Guarantee A: If the Robot is at waypoint i and it has inspected that waypoint and the radition level was not dangerous, then it will move to the next waypoint or to the original waypoint (the exit) if there is no next waypoint.
+
+-- Guarantee B: And, if the Robot is at waypoint i and it has not been inspected, then the Robot will inspect it.
+
+-- Guarantee C: And, if the Robot inspects a waypoint and the radiation level is dangerous, then the Robot will return to the original waypoint (the exit)
+include "rover_defs3.csp"
+transparent diamond
+
+---------------------------------------------------------------------------------------------
+
+-- ROVER
+
+---------------------------------------------------------------------------------------------
+
+
+ROVER(InspectedWPs, Rad) =     -- Order is important in the pattern matching
+    move?wp -> ROVER_BEGINNING(InspectedWPs, Rad, wp)
+    []
+    radiation_level?Green -> ROVER(InspectedWPs, Green)
+    []
+    radiation_level?r:({Red, Orange}) -> ROVER_ABORTING
+    --[]
+    --(member(0,InspectedWPs) == False) & move.0 -> arrived_at.0 -> ROVER(union(InspectedWPs, {0}), Rad)
+    
+ROVER_BEGINNING(InspectedWPs, Rad, wp) =
+    arrived_at.wp -> ROVER_MOVING (InspectedWPs, Rad, wp)
+    []
+    radiation_level?Green -> ROVER_BEGINNING(InspectedWPs, Green, wp)
+    []
+    radiation_level?r:({Red, Orange}) -> ROVER_ABORTING
+
+ROVER_MOVING (InspectedWPs, Rad, wp) =
+    inspect.wp -> ROVER_INSPECTING(InspectedWPs, Rad, wp) 
+    []
+    radiation_level?Green -> ROVER_MOVING(InspectedWPs, Green, wp)
+    []
+    radiation_level?r:({Red, Orange}) -> ROVER_ABORTING
+
+ROVER_INSPECTING(InspectedWPs, Rad, wp) =     
+
+    inspected.wp -> (if diff(waypointID, union(InspectedWPs, {wp})) == {} then ROVER_ENDING(Rad) else  ROVER(union(InspectedWPs, {wp}), Rad) ) -- Note: does not actually add the final waypoint to the InspectedWPs set
+    []
+    radiation_level?Green -> ROVER_INSPECTING(InspectedWPs, Green, wp)
+    []
+    radiation_level?r:({Red, Orange}) -> ROVER_ABORTING
+
+ROVER_ENDING(Rad) = 
+    mission_complete -> SKIP -- Without mission_complete, can cause non-determinsim. Either we skip (tau) and start again (mission_start) or we get another radiation_level
+    []
+    radiation_level?Green -> ROVER_ENDING(Green)
+    []
+    radiation_level?r:({Red, Orange}) -> ROVER_ABORTING
+
+    
+ROVER_ABORTING = 
+(move.0 -> 
+mission_abort -> 
+SKIP)
+[|{|move|}|]
+RAD_LOOP
+
+RAD_LOOP =
+radiation_level?r -> RAD_LOOP
+[]
+move?_ -> SKIP
+
+    
+ROVER_SYSTEM = 
+ROVER({}, Green) 
+; ROVER_SYSTEM
+
+DIM_ROVER_SYSTEM5 = diamond(ROVER_SYSTEM)
+
+--Check Single Rover Run
+assert ROVER(waypointID, Green) ; RUN(Events) :[deadlock free]
+assert ROVER(waypointID, Green)  :[divergence free]
+assert ROVER(waypointID, Green)  :[deterministic]
+
+
+--Check Repeated Rover Runs
+assert ROVER_SYSTEM :[deadlock free]
+assert ROVER_SYSTEM :[divergence free]
+assert ROVER_SYSTEM :[deterministic]
+
+--Check mission_complete
+assert ROVER_SYSTEM\{|inspect, move, arrived_at, inspected, radiation_level|} :[has trace [T]]: <mission_start, mission_complete>
+
+
+--Check mission_abort
+assert ROVER_SYSTEM\{|inspect, move, arrived_at, inspected, radiation_level|} :[has trace [T]]: <mission_start, mission_abort>
+
+
+--Check Hiding
+assert ROVER_SYSTEM\{|mission_start, mission_complete, mission_abort|} :[deadlock free]
+assert ROVER_SYSTEM\{|mission_start, mission_complete, mission_abort|} :[divergence free]
+assert ROVER_SYSTEM\{|mission_start, mission_complete, mission_abort|} :[deterministic]
