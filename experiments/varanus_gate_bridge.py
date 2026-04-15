@@ -4,8 +4,10 @@
 from __future__ import print_function
 
 import argparse
+import errno
 import json
 import os
+import select
 import sys
 import traceback
 from contextlib import contextmanager
@@ -95,34 +97,51 @@ def main():
         traceback.print_exc(file=sys.stderr)
         return 1
 
-    for raw_line in sys.stdin:
-        line = raw_line.strip()
-        if not line:
-            continue
+    stdin_fd = sys.stdin.fileno()
+    input_buffer = ""
+
+    while True:
         try:
-            request = json.loads(line)
-            event_name = str(request["event"])
-            log("bridge: received event " + event_name)
-            with redirect_prints_to_stderr():
-                log("bridge: before transition " + event_name)
-                resulting_state = monitor.process.transition(event_name)
-                log("bridge: after transition " + event_name)
-                passed = monitor.check_result(event_name, resulting_state)
-            payload = {
-                "event": event_name,
-                "parsed_event": event_name,
-            }
-            if passed:
-                payload["verdict"] = "currently_true" if resulting_state is not None else "ignored"
-            else:
-                payload["verdict"] = "false"
-            send_message(payload)
-            log("bridge: reply sent for " + event_name + " verdict=" + str(payload["verdict"]))
-        except Exception as error:
-            print("bridge_event_error: {0}".format(error), file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
-            send_message({"verdict": "error", "error": str(error)})
-            return 1
+            ready, _, _ = select.select([stdin_fd], [], [], 0.25)
+        except select.error as error:
+            if error.args and error.args[0] == errno.EINTR:
+                continue
+            raise
+        if not ready:
+            continue
+        chunk = os.read(stdin_fd, 4096)
+        if chunk == b"":
+            break
+        input_buffer += chunk.decode("utf-8", errors="replace")
+        while "\n" in input_buffer:
+            raw_line, input_buffer = input_buffer.split("\n", 1)
+            line = raw_line.strip()
+            if not line:
+                continue
+            try:
+                request = json.loads(line)
+                event_name = str(request["event"])
+                log("bridge: received event " + event_name)
+                with redirect_prints_to_stderr():
+                    log("bridge: before transition " + event_name)
+                    resulting_state = monitor.process.transition(event_name)
+                    log("bridge: after transition " + event_name)
+                    passed = monitor.check_result(event_name, resulting_state)
+                payload = {
+                    "event": event_name,
+                    "parsed_event": event_name,
+                }
+                if passed:
+                    payload["verdict"] = "currently_true" if resulting_state is not None else "ignored"
+                else:
+                    payload["verdict"] = "false"
+                send_message(payload)
+                log("bridge: reply sent for " + event_name + " verdict=" + str(payload["verdict"]))
+            except Exception as error:
+                print("bridge_event_error: {0}".format(error), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+                send_message({"verdict": "error", "error": str(error)})
+                return 1
     return 0
 
 

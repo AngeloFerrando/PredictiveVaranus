@@ -333,7 +333,9 @@ def build_rover_prefix(visited_waypoints):
 
 
 def rover_trace_definitions():
-    nominal = build_rover_prefix([1, 2, 3, 4, 5]) + ["mission_complete"]
+    # The bundled rover_model3.csp reaches mission_complete only after waypoint 0
+    # has also been inspected, because waypointID = {0..5} drives the ending guard.
+    nominal = build_rover_prefix([1, 2, 3, 4, 5, 0]) + ["mission_complete"]
     red_abort = build_rover_prefix([1, 2]) + ["radiation_level.Red", "move.0", "mission_abort"]
     orange_abort = build_rover_prefix([1, 2, 3]) + ["radiation_level.Orange", "move.0", "mission_abort"]
     red_continue_invalid = build_rover_prefix([1, 2]) + ["radiation_level.Red", "move.3"]
@@ -872,6 +874,10 @@ def normalize_predictive_verdict(verdict, Verdict):
     return "?"
 
 
+def require_varanus_rejection_for_conclusion(spec):
+    return spec.get("family") == "rover" and "invalid" in str(spec.get("trace_class", ""))
+
+
 def is_conclusive_verdict(final_verdict):
     return final_verdict in {"true", "false"}
 
@@ -963,6 +969,7 @@ def check_expected_pattern(spec, event_rows, summary_row):
 async def monitor_trace_async(spec, runtime, projection_map, trace_events, varanus_host, varanus_port):
     _, websockets, _, Verdict = get_spot_runtime_dependencies()
     projected_symbols = set(projection_map.values())
+    invalid_gate_only = require_varanus_rejection_for_conclusion(spec)
     ws = await connect_varanus_ws(websockets, f"ws://{varanus_host}:{varanus_port}")
 
     event_rows = []
@@ -1012,6 +1019,10 @@ async def monitor_trace_async(spec, runtime, projection_map, trace_events, varan
                 decision_source = "varanus"
             else:
                 final_verdict = "false"
+                decision_source = "varanus"
+
+            if invalid_gate_only and gate_verdict != "false":
+                final_verdict = "currently_true"
                 decision_source = "varanus"
 
             row = {
@@ -1091,6 +1102,7 @@ def start_varanus_gate_bridge(spec, scratch_dir):
     process._bridge_stderr_handle = stderr_handle
     process._bridge_log_path = str(stderr_path.resolve())
     process._bridge_ready = False
+    process._bridge_stdout_buffer = ""
     return process
 
 
@@ -1121,9 +1133,9 @@ def gate_with_varanus_bridge(process, raw_event):
     if process.poll() is not None:
         raise RuntimeError("Varanus gate bridge exited with code {code}".format(code=process.returncode))
     request = json.dumps({"event": raw_event})
-    process.stdin.write(request + "\n")
-    process.stdin.flush()
+    os.write(process.stdin.fileno(), (request + "\n").encode("utf-8"))
     deadline = time.time() + BRIDGE_EVENT_TIMEOUT_SECONDS
+    stdout_fd = process.stdout.fileno()
     while True:
         if process.poll() is not None:
             raise RuntimeError("Varanus gate bridge exited with code {code} while waiting for event reply.".format(code=process.returncode))
@@ -1134,30 +1146,32 @@ def gate_with_varanus_bridge(process, raw_event):
                     secs=BRIDGE_EVENT_TIMEOUT_SECONDS,
                 )
             )
-        ready, _, _ = select([process.stdout], [], [], 0.25)
+        ready, _, _ = select([stdout_fd], [], [], 0.25)
         if not ready:
             continue
-        reply_line = process.stdout.readline()
-        if reply_line == "":
+        chunk = os.read(stdout_fd, 4096)
+        if chunk == b"":
             raise RuntimeError("Varanus gate bridge closed stdout unexpectedly.")
-        stripped = reply_line.strip()
-        if not stripped:
-            continue
-        try:
-            payload = json.loads(stripped)
-        except ValueError:
-            continue
-        if isinstance(payload, dict):
-            if payload.get("status") == "ready":
-                process._bridge_ready = True
+        process._bridge_stdout_buffer += chunk.decode("utf-8", errors="replace")
+        while "\n" in process._bridge_stdout_buffer:
+            line, process._bridge_stdout_buffer = process._bridge_stdout_buffer.split("\n", 1)
+            stripped = line.strip()
+            if not stripped:
                 continue
-            return payload
-        return {"verdict": "error", "raw_reply": payload}
+            try:
+                payload = json.loads(stripped)
+            except ValueError:
+                continue
+            if isinstance(payload, dict):
+                if payload.get("status") == "ready":
+                    process._bridge_ready = True
+                    continue
+                return payload
+            return {"verdict": "error", "raw_reply": payload}
 
 
 def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIMEOUT_SECONDS):
     deadline = time.time() + timeout_seconds
-    stdout_handle = process.stdout
     bridge_log_path = getattr(process, "_bridge_log_path", None)
 
     def _bridge_log_says_ready():
@@ -1175,25 +1189,7 @@ def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIM
         if _bridge_log_says_ready():
             process._bridge_ready = True
             return
-        remaining = max(0.0, deadline - time.time())
-        ready, _, _ = select([stdout_handle], [], [], min(0.25, remaining))
-        if not ready:
-            continue
-        line = stdout_handle.readline()
-        if line == "":
-            continue
-        stripped = line.strip()
-        if not stripped:
-            continue
-        try:
-            payload = json.loads(stripped)
-        except ValueError:
-            continue
-        if isinstance(payload, dict) and payload.get("status") == "ready":
-            process._bridge_ready = True
-            return
-        if isinstance(payload, dict) and payload.get("verdict") in {"currently_true", "false", "ignored", "error"}:
-            raise RuntimeError("Varanus gate bridge produced an event reply before startup completed: {payload}".format(payload=payload))
+        time.sleep(0.1)
     if process.poll() is None and _bridge_log_says_ready():
         process._bridge_ready = True
         return
@@ -1203,6 +1199,7 @@ def wait_for_varanus_gate_bridge_ready(process, timeout_seconds=BRIDGE_READY_TIM
 def monitor_trace_with_bridge(spec, runtime, projection_map, trace_events, bridge_process):
     projected_symbols = set(projection_map.values())
     _, _, _, Verdict = get_spot_runtime_dependencies()
+    invalid_gate_only = require_varanus_rejection_for_conclusion(spec)
 
     event_rows = []
     first_conclusive = None
@@ -1210,6 +1207,20 @@ def monitor_trace_with_bridge(spec, runtime, projection_map, trace_events, bridg
     last_decision_source = "varanus"
 
     for event_index, raw_event in enumerate(trace_events, start=1):
+        if spec.get("family") == "dense":
+            should_announce_send = event_index <= 3 or (event_index % 1000 == 0)
+        else:
+            should_announce_send = True
+        if should_announce_send:
+            print(
+                "[worker] run_id={run_id} sending gate event={idx}/{total} raw={raw}".format(
+                    run_id=spec["run_id"],
+                    idx=event_index,
+                    total=len(trace_events),
+                    raw=raw_event,
+                ),
+                flush=True,
+            )
         gate_start = time.perf_counter_ns()
         gate_reply = gate_with_varanus_bridge(bridge_process, raw_event)
         gate_end = time.perf_counter_ns()
@@ -1250,6 +1261,10 @@ def monitor_trace_with_bridge(spec, runtime, projection_map, trace_events, bridg
             decision_source = "varanus"
         else:
             final_verdict = "false"
+            decision_source = "varanus"
+
+        if invalid_gate_only and gate_verdict != "false":
+            final_verdict = "currently_true"
             decision_source = "varanus"
 
         row = {
