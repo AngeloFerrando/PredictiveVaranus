@@ -22,6 +22,7 @@ from monitor import (
     gate_with_varanus,
     normalize_gate_verdict,
     parse_hoa_metadata,
+    print_log_tail,
     project_ltl_formula,
     resolve_projected_event,
     run_varanus_buchi,
@@ -1123,16 +1124,31 @@ def run_worker(spec):
             spec["varanus_python"],
             verbose_varanus=False,
         )
-        monitored = asyncio.run(
-            monitor_trace_async(
-                spec=spec,
-                runtime=runtime,
-                projection_map=projection_map,
-                trace_events=trace_events,
-                varanus_host=spec["varanus_host"],
-                varanus_port=spec["varanus_port"],
+        try:
+            monitored = asyncio.run(
+                monitor_trace_async(
+                    spec=spec,
+                    runtime=runtime,
+                    projection_map=projection_map,
+                    trace_events=trace_events,
+                    varanus_host=spec["varanus_host"],
+                    varanus_port=spec["varanus_port"],
+                )
             )
-        )
+        except Exception:
+            online_log_path = getattr(varanus_process, "_varanus_log_path", None)
+            if online_log_path:
+                print(
+                    "Varanus online log: {path}".format(path=str(Path(online_log_path).resolve())),
+                    flush=True,
+                )
+                print_log_tail(online_log_path)
+            if varanus_process is not None and varanus_process.poll() is not None:
+                print(
+                    "Varanus online process exited with code {code}".format(code=varanus_process.returncode),
+                    flush=True,
+                )
+            raise
 
         event_rows = monitored["event_rows"]
         first_conclusive = monitored["first_conclusive"]
