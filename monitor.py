@@ -28,6 +28,20 @@ def ensure_log_dir():
     os.makedirs("log", exist_ok=True)
 
 
+def print_log_tail(log_path, max_lines=80):
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as source:
+            lines = source.read().splitlines()
+    except OSError:
+        print("Could not read log file: {path}".format(path=os.path.abspath(log_path)))
+        return
+
+    tail = lines[-max_lines:]
+    print("Last {count} line(s) from {path}:".format(count=len(tail), path=os.path.abspath(log_path)), flush=True)
+    for line in tail:
+        print(line, flush=True)
+
+
 def shorten(text, max_len=220):
     text = str(text)
     if len(text) <= max_len:
@@ -219,7 +233,8 @@ def run_varanus_buchi(config_file, varanus_script, varanus_python, verbose_varan
     except subprocess.CalledProcessError as error:
         print(f"Error while running varanus: {error}")
         if not verbose_varanus:
-            print("See Varanus build output in: {path}".format(path=log_path))
+            print("See Varanus build output in: {path}".format(path=os.path.abspath(log_path)))
+            print_log_tail(log_path)
         print(
             "Hint: if this is an FDR import error (PyInit__fdr), run Varanus with the "
             "Python version matching FDR via --varanus-python (often python3.8)."

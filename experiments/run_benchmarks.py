@@ -70,6 +70,33 @@ def manifest_path(generated_dir):
     return Path(generated_dir) / "manifest.json"
 
 
+def manifest_paths_are_valid(manifest):
+    checks = []
+
+    rover = manifest.get("rover", {})
+    if rover.get("config_path"):
+        checks.append(rover["config_path"])
+    if rover.get("model_path"):
+        checks.append(rover["model_path"])
+    for trace_spec in rover.get("traces", {}).values():
+        if trace_spec.get("trace_path"):
+            checks.append(trace_spec["trace_path"])
+
+    for model_spec in manifest.get("dense", {}).get("models", {}).values():
+        if model_spec.get("model_path"):
+            checks.append(model_spec["model_path"])
+        if model_spec.get("config_path"):
+            checks.append(model_spec["config_path"])
+
+    for model_spec in manifest.get("decision_tail", {}).get("models", {}).values():
+        if model_spec.get("model_path"):
+            checks.append(model_spec["model_path"])
+        if model_spec.get("config_path"):
+            checks.append(model_spec["config_path"])
+
+    return all(Path(path).exists() for path in checks if path)
+
+
 def resolve_executable(executable):
     executable = str(executable)
     if "/" in executable:
@@ -105,7 +132,14 @@ def load_or_prepare_manifest(args):
     path = manifest_path(args.generated_dir)
     if args.command == "prepare-inputs" or args.refresh_inputs or not path.exists():
         return build_manifest(args)
-    return read_json(path)
+    manifest = read_json(path)
+    if not manifest_paths_are_valid(manifest):
+        print(
+            "Regenerating benchmark inputs because the existing manifest contains paths that do not exist in this environment.",
+            flush=True,
+        )
+        return build_manifest(args)
+    return manifest
 
 
 def suite_specs(manifest, suite_id, args):
