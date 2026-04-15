@@ -16,18 +16,14 @@ import time
 from pathlib import Path
 
 from monitor import (
-    connect_varanus_ws,
     extract_parsed_event,
     find_generated_hoa,
-    gate_with_varanus,
     normalize_gate_verdict,
     parse_hoa_metadata,
     print_log_tail,
     project_ltl_formula,
     resolve_projected_event,
     run_varanus_buchi,
-    start_varanus_online,
-    stop_varanus_online,
 )
 from hoa_projection import project_hoa_file
 
@@ -46,6 +42,7 @@ DEFAULT_MEASURED_SEEDS = list(range(10))
 DEFAULT_DECISION_TRACE_SEEDS = list(range(20))
 DEFAULT_WARMUP_SEEDS = [-2, -1]
 INCLUDE_PATTERN = re.compile(r'^\s*include\s+"([^"]+)"')
+BRIDGE_SCRIPT = REPO_ROOT / "experiments" / "varanus_gate_bridge.py"
 
 ROVER_PROPERTIES = [
     {
@@ -1069,6 +1066,173 @@ async def monitor_trace_async(spec, runtime, projection_map, trace_events, varan
     }
 
 
+def start_varanus_gate_bridge(spec, scratch_dir):
+    log_dir = ensure_dir(Path(scratch_dir) / "log")
+    stderr_path = log_dir / "varanus_gate_bridge.log"
+    stderr_handle = open(stderr_path, "w", encoding="utf-8")
+    process = subprocess.Popen(
+        [
+            spec["varanus_python"],
+            str(BRIDGE_SCRIPT.resolve()),
+            "--varanus-dir",
+            str(Path(spec["varanus_script"]).resolve().parent),
+            "--config",
+            spec["config_path"],
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=stderr_handle,
+        text=True,
+        bufsize=1,
+    )
+    process._bridge_stderr_handle = stderr_handle
+    process._bridge_log_path = str(stderr_path.resolve())
+    return process
+
+
+def stop_varanus_gate_bridge(process):
+    if process is None:
+        return
+    try:
+        if process.stdin and not process.stdin.closed:
+            process.stdin.close()
+    except Exception:
+        pass
+    try:
+        if process.poll() is None:
+            process.terminate()
+            process.wait(timeout=5)
+    except Exception:
+        try:
+            process.kill()
+        except Exception:
+            pass
+    finally:
+        stderr_handle = getattr(process, "_bridge_stderr_handle", None)
+        if stderr_handle is not None and not stderr_handle.closed:
+            stderr_handle.close()
+
+
+def gate_with_varanus_bridge(process, raw_event):
+    if process.poll() is not None:
+        raise RuntimeError("Varanus gate bridge exited with code {code}".format(code=process.returncode))
+    request = json.dumps({"event": raw_event})
+    process.stdin.write(request + "\n")
+    process.stdin.flush()
+    reply_line = process.stdout.readline()
+    if reply_line == "":
+        raise RuntimeError("Varanus gate bridge closed stdout unexpectedly.")
+    payload = json.loads(reply_line)
+    if isinstance(payload, dict):
+        return payload
+    return {"verdict": "error", "raw_reply": payload}
+
+
+def monitor_trace_with_bridge(spec, runtime, projection_map, trace_events, bridge_process):
+    projected_symbols = set(projection_map.values())
+    _, _, _, Verdict = get_spot_runtime_dependencies()
+
+    event_rows = []
+    first_conclusive = None
+    last_final_verdict = "?"
+    last_decision_source = "varanus"
+
+    for event_index, raw_event in enumerate(trace_events, start=1):
+        gate_start = time.perf_counter_ns()
+        gate_reply = gate_with_varanus_bridge(bridge_process, raw_event)
+        gate_end = time.perf_counter_ns()
+        gate_verdict = normalize_gate_verdict(gate_reply.get("verdict", ""))
+
+        projection_start = gate_end
+        projection_end = gate_end
+        predictive_start = gate_end
+        predictive_end = gate_end
+        predictive_text = ""
+        predictive_reason = ""
+        projected_event = ""
+        parsed_event = extract_parsed_event(gate_reply) or ""
+        decision_source = "varanus"
+        final_verdict = gate_verdict or "false"
+
+        if gate_verdict == "currently_true" and parsed_event:
+            projection_start = time.perf_counter_ns()
+            projected_event = resolve_projected_event(parsed_event, projection_map, projected_symbols)
+            projection_end = time.perf_counter_ns()
+
+            predictive_start = time.perf_counter_ns()
+            predictive_verdict = runtime.step(projected_event)
+            predictive_end = time.perf_counter_ns()
+            predictive_text = normalize_predictive_verdict(predictive_verdict, Verdict)
+            predictive_reason = runtime.get_last_step_info().get("reason", "")
+            if predictive_text == "?":
+                final_verdict = "currently_true"
+                decision_source = "varanus"
+            else:
+                final_verdict = predictive_text
+                decision_source = "ltl"
+        elif gate_verdict == "currently_true":
+            final_verdict = "currently_true"
+            decision_source = "varanus"
+        elif gate_verdict == "ignored":
+            final_verdict = "ignored"
+            decision_source = "varanus"
+        else:
+            final_verdict = "false"
+            decision_source = "varanus"
+
+        row = {
+            "family": spec["family"],
+            "suite_id": spec["suite_id"],
+            "run_id": spec["run_id"],
+            "scenario_id": spec["scenario_id"],
+            "trace_id": spec["trace_id"],
+            "property_id": spec["property_id"],
+            "property_label": spec["property_label"],
+            "formula": spec["formula"],
+            "parameter_label": spec["parameter_label"],
+            "trace_class": spec["trace_class"],
+            "seed": spec["seed"],
+            "trace_seed": spec["trace_seed"],
+            "repetition": spec["repetition"],
+            "event_index": event_index,
+            "raw_event": raw_event,
+            "parsed_event": parsed_event,
+            "projected_event": projected_event,
+            "gate_verdict": gate_verdict,
+            "predictive_verdict": predictive_text,
+            "predictive_reason": predictive_reason,
+            "decision_source": decision_source,
+            "final_verdict": final_verdict,
+            "t_gate_ms": ns_to_ms(gate_end - gate_start),
+            "t_projection_lookup_ms": ns_to_ms(projection_end - projection_start),
+            "t_predictive_ms": ns_to_ms(predictive_end - predictive_start),
+            "t_total_ms": ns_to_ms((gate_end - gate_start) + (projection_end - projection_start) + (predictive_end - predictive_start)),
+        }
+        event_rows.append(row)
+        last_final_verdict = final_verdict
+        last_decision_source = decision_source
+
+        if first_conclusive is None and is_conclusive_verdict(final_verdict):
+            first_conclusive = {
+                "index": event_index,
+                "event": raw_event,
+                "decision_source": decision_source,
+                "final_verdict": final_verdict,
+            }
+            if spec.get("stop_on_conclusion", True):
+                break
+
+        if gate_verdict == "false":
+            break
+
+    return {
+        "event_rows": event_rows,
+        "first_conclusive": first_conclusive,
+        "last_final_verdict": last_final_verdict,
+        "last_decision_source": last_decision_source,
+    }
+
+
 def run_worker(spec):
     spec = dict(spec)
     scratch_dir = ensure_dir(spec["scratch_dir"])
@@ -1118,34 +1282,26 @@ def run_worker(spec):
         projected_transition_count = count_automaton_transitions(projected_automaton)
         runtime_stats = runtime.get_static_stats()
 
-        varanus_process = start_varanus_online(
-            spec["config_path"],
-            spec["varanus_script"],
-            spec["varanus_python"],
-            verbose_varanus=False,
-        )
+        varanus_process = start_varanus_gate_bridge(spec, scratch_dir)
         try:
-            monitored = asyncio.run(
-                monitor_trace_async(
-                    spec=spec,
-                    runtime=runtime,
-                    projection_map=projection_map,
-                    trace_events=trace_events,
-                    varanus_host=spec["varanus_host"],
-                    varanus_port=spec["varanus_port"],
-                )
+            monitored = monitor_trace_with_bridge(
+                spec=spec,
+                runtime=runtime,
+                projection_map=projection_map,
+                trace_events=trace_events,
+                bridge_process=varanus_process,
             )
         except Exception:
-            online_log_path = getattr(varanus_process, "_varanus_log_path", None)
-            if online_log_path:
+            bridge_log_path = getattr(varanus_process, "_bridge_log_path", None)
+            if bridge_log_path:
                 print(
-                    "Varanus online log: {path}".format(path=str(Path(online_log_path).resolve())),
+                    "Varanus gate bridge log: {path}".format(path=str(Path(bridge_log_path).resolve())),
                     flush=True,
                 )
-                print_log_tail(online_log_path)
+                print_log_tail(bridge_log_path)
             if varanus_process is not None and varanus_process.poll() is not None:
                 print(
-                    "Varanus online process exited with code {code}".format(code=varanus_process.returncode),
+                    "Varanus gate bridge process exited with code {code}".format(code=varanus_process.returncode),
                     flush=True,
                 )
             raise
@@ -1229,7 +1385,7 @@ def run_worker(spec):
         return summary_row
     finally:
         if varanus_process is not None:
-            stop_varanus_online(varanus_process)
+            stop_varanus_gate_bridge(varanus_process)
         os.chdir(old_cwd)
 
 
@@ -1808,8 +1964,11 @@ def collect_worker_outputs(spec):
 
 
 def cleanup_worker_artifacts(spec):
-    for key in ("event_csv_path", "summary_json_path", "worker_stdout_path", "worker_stderr_path"):
-        path = Path(spec[key])
+    for key in ("event_csv_path", "summary_json_path", "worker_stdout_path", "worker_stderr_path", "bridge_log_path"):
+        value = spec.get(key)
+        if not value:
+            continue
+        path = Path(value)
         if path.exists():
             path.unlink()
     spec_path = spec.get("spec_path")
