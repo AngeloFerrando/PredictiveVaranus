@@ -5,6 +5,7 @@ import math
 import os
 import platform
 import random
+import re
 import resource
 import shutil
 import statistics
@@ -43,6 +44,7 @@ DEFAULT_DECISION_TAILS = [1, 5, 10, 20]
 DEFAULT_MEASURED_SEEDS = list(range(10))
 DEFAULT_DECISION_TRACE_SEEDS = list(range(20))
 DEFAULT_WARMUP_SEEDS = [-2, -1]
+INCLUDE_PATTERN = re.compile(r'^\s*include\s+"([^"]+)"')
 
 ROVER_PROPERTIES = [
     {
@@ -384,19 +386,56 @@ def yaml_list(items):
 
 
 def write_varanus_config(path, alphabet, common_alphabet, main_process, model_path, name, trace_file="log.json"):
+    path = Path(path)
+    model_ref = os.path.relpath(Path(model_path).resolve(), start=path.parent.resolve())
     body = textwrap.dedent(
         f"""\
         ---
         alphabet: {yaml_list(alphabet)}
         common_alphabet: {yaml_list(common_alphabet)}
         main_process: "{main_process}"
-        model: "{Path(model_path).resolve()}"
+        model: "{model_ref}"
         trace_file: "{trace_file}"
         name: "{name}"
         mode: "permissive"
         """
     )
     return write_text(path, body)
+
+
+def copy_csp_bundle(entry_model_path, target_dir, source_root=None, copied=None):
+    entry_model_path = Path(entry_model_path).resolve()
+    target_dir = Path(target_dir).resolve()
+    copied = copied or set()
+    if source_root is None:
+        source_root = entry_model_path.parent
+
+    if entry_model_path in copied:
+        try:
+            rel_path = entry_model_path.relative_to(source_root)
+        except ValueError:
+            rel_path = Path(entry_model_path.name)
+        return target_dir / rel_path
+
+    try:
+        rel_path = entry_model_path.relative_to(source_root)
+    except ValueError:
+        rel_path = Path(entry_model_path.name)
+
+    target_path = target_dir / rel_path
+    ensure_dir(target_path.parent)
+    shutil.copyfile(entry_model_path, target_path)
+    copied.add(entry_model_path)
+
+    for line in entry_model_path.read_text(encoding="utf-8").splitlines():
+        match = INCLUDE_PATTERN.match(line)
+        if not match:
+            continue
+        include_path = match.group(1)
+        include_source = (entry_model_path.parent / include_path).resolve()
+        copy_csp_bundle(include_source, target_dir, source_root=source_root, copied=copied)
+
+    return target_path
 
 
 def dense_model_text(size):
@@ -500,16 +539,18 @@ def prepare_inputs(
 
     rover_dir = ensure_dir(generated_dir / "rover")
     rover_trace_dir = ensure_dir(rover_dir / "traces")
+    rover_model_local = copy_csp_bundle(rover_model_path, rover_dir)
     rover_cfg = write_varanus_config(
         rover_dir / "rover_benchmark.yaml",
         alphabet=["inspect", "inspected", "arrived_at", "radiation_level", "mission_complete", "mission_abort", "mission_start", "move"],
         common_alphabet=["inspect", "inspected", "arrived_at", "radiation_level", "move", "mission_complete", "mission_abort", "mission_start"],
         main_process="ROVER_SYSTEM",
-        model_path=rover_model_path,
+        model_path=rover_model_local,
         name="rover_benchmark",
     )
     manifest["rover"]["config_path"] = str(rover_cfg.resolve())
     manifest["rover"]["source_config_path"] = str(Path(rover_config_path).resolve())
+    manifest["rover"]["model_path"] = str(Path(rover_model_local).resolve())
 
     for trace_id, spec in rover_trace_definitions().items():
         trace_path = write_trace_file(rover_trace_dir / f"{trace_id}.trace", spec["events"])
