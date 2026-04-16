@@ -1,9 +1,0 @@
-channel e : {0..99}
-
-S(i) = [] j : {0..99} @ e.j -> S(j)
-
-MAIN = S(0)
-
-assert MAIN :[deadlock free]
-assert MAIN :[divergence free]
-assert MAIN :[deterministic]

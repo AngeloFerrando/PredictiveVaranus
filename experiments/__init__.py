@@ -1,1 +1,1 @@
-"""Benchmark utilities for PredictiveVaranus experiments."""
+"""Benchmark utilities for the PredictiveVaranus evaluation."""

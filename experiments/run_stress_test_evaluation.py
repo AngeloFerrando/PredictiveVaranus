@@ -1,3 +1,5 @@
+"""Paper-facing entry point for the synthetic stress-test benchmarks."""
+
 import argparse
 import sys
 from pathlib import Path

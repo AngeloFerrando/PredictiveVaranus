@@ -1,3 +1,10 @@
+"""Command-line benchmark runner for the PredictiveVaranus paper experiments.
+
+The runner prepares deterministic rover and synthetic benchmark inputs, executes
+each measured run in an isolated worker process, and writes both raw CSV logs
+and paper-facing aggregate tables.
+"""
+
 import argparse
 import json
 import shutil

@@ -1,3 +1,11 @@
+"""Benchmark support library for the PredictiveVaranus paper experiments.
+
+This module contains deterministic input generators, isolated worker execution,
+per-event measurement logic, CSV aggregation, and plot/table generation. It is
+kept separate from the command-line wrapper so the rover and stress-test entry
+points can reuse the same implementation.
+"""
+
 import asyncio
 import csv
 import json

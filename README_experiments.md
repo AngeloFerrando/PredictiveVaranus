@@ -1,6 +1,7 @@
-# Experiments
+# PredictiveVaranus Experiments
 
-This repository now includes a benchmark harness for the paper experiments under [`experiments/`](./experiments).
+This repository includes a benchmark harness for the paper experiments under [`experiments/`](./experiments).
+For a compact reproducibility checklist, see [`ARTIFACT.md`](./ARTIFACT.md).
 
 The runner is built around the current `PredictiveVaranus` architecture and reuses the same core functions already used by [`monitor.py`](./monitor.py):
 
@@ -8,11 +9,11 @@ The runner is built around the current `PredictiveVaranus` architecture and reus
 - `project_hoa_file(...)`
 - `project_ltl_formula(...)`
 - `PredictiveRuntime(...)`
-- `connect_varanus_ws(...)`
-- `gate_with_varanus(...)`
 - `extract_parsed_event(...)`
 - `resolve_projected_event(...)`
 - `normalize_gate_verdict(...)`
+
+Measured workers gate events through [`experiments/varanus_gate_bridge.py`](./experiments/varanus_gate_bridge.py), which avoids fragile websocket parsing for raw CSP event traces while still using Varanus/FDR as the conformance oracle.
 
 It supports:
 
@@ -26,12 +27,15 @@ It supports:
 - plot-ready aggregate CSVs
 - plot generation with `matplotlib`
 
-## Files Added
+Generated benchmark inputs are intentionally not committed. They are deterministic and can be regenerated with `prepare-inputs` or any run command using `--refresh-inputs`.
+
+## Experiment Components
 
 - [`experiments/run_benchmarks.py`](./experiments/run_benchmarks.py): main entry point
 - [`experiments/run_rover_evaluation.py`](./experiments/run_rover_evaluation.py): rover case-study driver for Table `tab:rover-eval`
 - [`experiments/run_stress_test_evaluation.py`](./experiments/run_stress_test_evaluation.py): synthetic stress-test driver for the stress-test subsection
 - [`experiments/benchmark_lib.py`](./experiments/benchmark_lib.py): generators, worker logic, aggregation, plotting
+- [`experiments/varanus_gate_bridge.py`](./experiments/varanus_gate_bridge.py): lightweight Varanus/FDR gate bridge used by measured workers
 
 ## Prerequisites
 
@@ -60,7 +64,7 @@ You also need a working Varanus checkout and a Python executable that matches it
 `prepare-inputs` creates:
 
 - rover trace files under `experiments/generated/rover/traces/`
-- a benchmark-specific rover config with absolute model paths
+- a benchmark-specific rover config with a local CSP bundle and relative model paths
 - dense synthetic CSP models/configs
 - decision-tail synthetic CSP models/configs
 - `experiments/generated/manifest.json`
@@ -141,6 +145,8 @@ python3 -m experiments.run_benchmarks run-all \
   --varanus-python python3.8
 ```
 
+The default parameter grid is intentionally large. Use it for the final full experiment, not for quick validation.
+
 That command:
 
 - regenerates derived CSVs
@@ -156,6 +162,24 @@ python3 -m experiments.run_benchmarks run-all \
   --suite-order decision_tail,rover,dense \
   --varanus-script /path/to/varanus.py \
   --varanus-python python3.8
+```
+
+For a bounded paper-draft run that exercises all suites without the largest dense traces:
+
+```bash
+python3 -m experiments.run_benchmarks run-all \
+  --suite-order decision_tail,rover,dense \
+  --varanus-script /path/to/varanus.py \
+  --varanus-python python3.8 \
+  --refresh-inputs \
+  --dense-sizes 10,50,100,200 \
+  --dense-lengths 100,1000,10000 \
+  --warmup-seeds=-1 \
+  --measured-seeds=0,1,2 \
+  --decision-branching 2,4,8 \
+  --decision-depths 4,6 \
+  --decision-tails 1,5,10,20 \
+  --decision-trace-seeds=0,1,2,3,4
 ```
 
 ### 5. Run a Single Internal Suite
@@ -230,6 +254,18 @@ python3 -m experiments.run_benchmarks run-dense \
 - Warm-up runs are executed and discarded.
 - Peak RSS is collected with `resource.getrusage(...).ru_maxrss`.
 - Synthetic traces are generated deterministically from fixed seeds at run time.
+- The implementation uses the special proposition `tick` for terminal stuttering. Paper text may call the same proposition `skip`, but formulas passed to the benchmark runner must use `tick`.
+- Predictive benefit is measured against the terminal reference event in the trace, not against a separately implemented reactive LTL monitor.
+
+## Debugging Failed Runs
+
+Add `--keep-worker-artifacts` to preserve per-run specs, worker logs, and scratch directories under `results/.tmp/`.
+
+On failure, the runner prints a `rerun_command` for the exact worker spec. Re-run it after inspecting the preserved logs:
+
+```bash
+python3 -m experiments.run_benchmarks run-one --spec results/.tmp/<suite>/<run_id>/<run_id>.spec.json
+```
 
 ## Rover Trace Inputs
 

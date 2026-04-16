@@ -1,8 +1,0 @@
----
-alphabet: [start, choose, commit, tail, mission_complete, mission_abort]
-common_alphabet: [start, choose, commit, tail, mission_complete, mission_abort]
-main_process: "MAIN"
-model: "/media/angelo/WorkData/git/PredictiveVaranus/experiments/generated/decision_tail/models/decision_tail_b4_d8_t20.csp"
-trace_file: "log.json"
-name: "decision_tail_b4_d8_t20"
-mode: "permissive"

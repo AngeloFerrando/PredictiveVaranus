@@ -1,3 +1,5 @@
+"""Paper-facing entry point for the rover case-study benchmark."""
+
 import argparse
 import sys
 from pathlib import Path

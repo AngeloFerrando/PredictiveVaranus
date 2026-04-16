@@ -1,8 +1,0 @@
----
-alphabet: [inspect, inspected, arrived_at, radiation_level, mission_complete, mission_abort, mission_start, move]
-common_alphabet: [inspect, inspected, arrived_at, radiation_level, move, mission_complete, mission_abort, mission_start]
-main_process: "ROVER_SYSTEM"
-model: "/media/angelo/WorkData/git/PredictiveVaranus/rover_model3.csp"
-trace_file: "log.json"
-name: "rover_benchmark"
-mode: "permissive"

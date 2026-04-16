@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+"""Line-oriented Varanus gate bridge used by benchmark workers.
+
+The bridge is intentionally small: it imports the Python 2 Varanus monitor,
+builds the CSP state machine once, then accepts one JSON event per stdin line
+and returns one JSON conformance reply per stdout line. Varanus/FDR diagnostic
+prints are redirected to stderr so stdout remains a stable machine protocol.
+"""
+
 from __future__ import print_function
 
 import argparse

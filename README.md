@@ -40,6 +40,9 @@ Producers must connect to the predictive endpoint (`5088` by default), not direc
 - `monitor.py`: main orchestrator (offline and online)
 - `hoa_projection.py`: HOA/AP projection utilities
 - `predictive_ltl.py`: predictive LTL runtime core and standalone CLI
+- `experiments/`: reproducible benchmark harness for the rover and synthetic evaluations
+- `README_experiments.md`: benchmark setup, commands, outputs, and methodology notes
+- `ARTIFACT.md`: compact artifact guide for reproducing benchmark inputs and outputs
 
 ## Requirements
 
@@ -160,7 +163,7 @@ PredictiveVaranus expects parsed events from Varanus (`parsed_event` and/or `eve
 The model side now uses a dedicated AP `tick` for post-termination stuttering in exported Büchi automata:
 
 - normal visible transitions are encoded with `!tick`
-- terminal accepting stutter uses `tick`
+- terminal stuttering self-loops use `tick`
 
 This avoids the older over-permissive `[true]` stutter behavior after termination.
 
